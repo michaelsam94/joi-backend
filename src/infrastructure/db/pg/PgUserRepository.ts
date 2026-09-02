@@ -14,6 +14,10 @@ interface UserRow {
   telegram_chat_id: string | null;
   total_points: number;
   active: boolean;
+  date_of_birth: string | null;
+  phone_number: string | null;
+  address: string | null;
+  class_name: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -30,6 +34,10 @@ function toDomain(row: UserRow): User {
     telegramChatId: row.telegram_chat_id,
     totalPoints: row.total_points,
     active: row.active,
+    dateOfBirth: row.date_of_birth,
+    phoneNumber: row.phone_number,
+    address: row.address,
+    className: row.class_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -43,9 +51,18 @@ export class PgUserRepository implements UserRepository {
   async create(data: CreateUserData): Promise<User> {
     try {
       const { rows } = await this.db.query<UserRow>(
-        `INSERT INTO users (full_name, username, password_hash, role)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [data.fullName, data.username, data.passwordHash, data.role],
+        `INSERT INTO users (full_name, username, password_hash, role, date_of_birth, phone_number, address, class_name)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [
+          data.fullName,
+          data.username,
+          data.passwordHash,
+          data.role,
+          data.dateOfBirth ?? null,
+          data.phoneNumber ?? null,
+          data.address ?? null,
+          data.className ?? null,
+        ],
       );
       return toDomain(rows[0]);
     } catch (e: any) {
@@ -96,6 +113,22 @@ export class PgUserRepository implements UserRepository {
     if (data.telegramChatId !== undefined) {
       sets.push(`telegram_chat_id = $${i++}`);
       values.push(data.telegramChatId);
+    }
+    if (data.dateOfBirth !== undefined) {
+      sets.push(`date_of_birth = $${i++}`);
+      values.push(data.dateOfBirth);
+    }
+    if (data.phoneNumber !== undefined) {
+      sets.push(`phone_number = $${i++}`);
+      values.push(data.phoneNumber);
+    }
+    if (data.address !== undefined) {
+      sets.push(`address = $${i++}`);
+      values.push(data.address);
+    }
+    if (data.className !== undefined) {
+      sets.push(`class_name = $${i++}`);
+      values.push(data.className);
     }
     sets.push(`updated_at = now()`);
 

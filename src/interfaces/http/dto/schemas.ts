@@ -9,11 +9,21 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(6),
 });
 
+const dateOfBirthSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'dateOfBirth must be YYYY-MM-DD')
+  .nullable()
+  .optional();
+
 export const registerUserSchema = z.object({
   fullName: z.string().min(1),
   username: z.string().min(3),
   temporaryPassword: z.string().min(6),
   role: z.enum(['MODERATOR', 'MEMBER']).optional(),
+  dateOfBirth: dateOfBirthSchema,
+  phoneNumber: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  className: z.string().nullable().optional(),
 });
 
 export const updateUserSchema = z.object({
@@ -21,6 +31,10 @@ export const updateUserSchema = z.object({
   role: z.enum(['MODERATOR', 'MEMBER']).optional(),
   active: z.boolean().optional(),
   telegramChatId: z.string().nullable().optional(),
+  dateOfBirth: dateOfBirthSchema,
+  phoneNumber: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  className: z.string().nullable().optional(),
 });
 
 export const checkInSchema = z.object({

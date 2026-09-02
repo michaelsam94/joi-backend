@@ -14,11 +14,22 @@ CREATE TABLE IF NOT EXISTS users (
   telegram_chat_id      TEXT,
   total_points          INTEGER NOT NULL DEFAULT 0,
   active                BOOLEAN NOT NULL DEFAULT TRUE,
+  date_of_birth         DATE,
+  phone_number          TEXT,
+  address               TEXT,
+  class_name            TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_total_points ON users(total_points);
+
+-- Idempotent — lets `db:migrate` add these columns to a users table that already existed
+-- before this profile-fields change, same as a fresh CREATE TABLE would.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name TEXT;
 
 CREATE TABLE IF NOT EXISTS attendance (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

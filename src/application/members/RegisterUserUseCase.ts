@@ -8,6 +8,10 @@ export interface RegisterUserInput {
   username: string;
   temporaryPassword: string;
   role?: 'MODERATOR' | 'MEMBER';
+  dateOfBirth?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  className?: string | null;
 }
 
 /**
@@ -35,6 +39,10 @@ export class RegisterUserUseCase {
       username: input.username.trim(),
       passwordHash,
       role: input.role ?? 'MEMBER',
+      dateOfBirth: input.dateOfBirth ?? null,
+      phoneNumber: input.phoneNumber ?? null,
+      address: input.address ?? null,
+      className: input.className ?? null,
     });
   }
 }

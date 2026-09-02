@@ -4,9 +4,23 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import { registerUserSchema, updateUserSchema } from '../dto/schemas';
-import { toPublicUser } from '../../../domain/entities/User';
+import { toPublicUser, User } from '../../../domain/entities/User';
 import { idParam } from '../dto/params';
 import { NotFoundError } from '../../../domain/errors/AppError';
+
+/** The full profile view: a moderator (about anyone) or a member (about themselves) only —
+ * everyone else only ever gets the leaderboard-safe shape from toPublicUser. */
+function toDetailedUser(user: User) {
+  return {
+    ...toPublicUser(user),
+    username: user.username,
+    telegramChatId: user.telegramChatId,
+    dateOfBirth: user.dateOfBirth,
+    phoneNumber: user.phoneNumber,
+    address: user.address,
+    className: user.className,
+  };
+}
 
 export function userRoutes(container: Container): Router {
   const router = Router();
@@ -19,7 +33,7 @@ export function userRoutes(container: Container): Router {
     validateBody(registerUserSchema),
     asyncHandler(async (req, res) => {
       const user = await container.useCases.registerUser.execute(req.body);
-      res.status(201).json(toPublicUser(user));
+      res.status(201).json(toDetailedUser(user));
     }),
   );
 
@@ -30,7 +44,7 @@ export function userRoutes(container: Container): Router {
     asyncHandler(async (req, res) => {
       const users = await container.useCases.listUsers.execute({ activeOnly: req.query.activeOnly !== 'false' });
       if (req.auth!.role === 'MODERATOR') {
-        res.json(users.map((u) => ({ ...toPublicUser(u), username: u.username, telegramChatId: u.telegramChatId })));
+        res.json(users.map(toDetailedUser));
       } else {
         res.json(users.map(toPublicUser));
       }
@@ -43,7 +57,7 @@ export function userRoutes(container: Container): Router {
       const users = await container.useCases.listUsers.execute({});
       const me = users.find((u) => u.id === req.auth!.userId);
       if (!me) throw new NotFoundError('User not found');
-      res.json({ ...toPublicUser(me), username: me.username });
+      res.json(toDetailedUser(me));
     }),
   );
 
@@ -53,7 +67,7 @@ export function userRoutes(container: Container): Router {
     validateBody(updateUserSchema),
     asyncHandler(async (req, res) => {
       const user = await container.useCases.updateUser.execute(idParam(req), req.body);
-      res.json(toPublicUser(user));
+      res.json(toDetailedUser(user));
     }),
   );
 

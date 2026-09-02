@@ -5,6 +5,10 @@ export interface CreateUserData {
   username: string;
   passwordHash: string;
   role: 'MODERATOR' | 'MEMBER';
+  dateOfBirth?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  className?: string | null;
 }
 
 export interface UpdateUserData {
@@ -12,6 +16,10 @@ export interface UpdateUserData {
   role?: 'MODERATOR' | 'MEMBER';
   active?: boolean;
   telegramChatId?: string | null;
+  dateOfBirth?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  className?: string | null;
 }
 
 export interface UserRepository {

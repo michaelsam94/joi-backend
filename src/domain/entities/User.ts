@@ -11,6 +11,12 @@ export interface User {
   telegramChatId: string | null;
   totalPoints: number;
   active: boolean;
+  /** YYYY-MM-DD, or null if not on file. */
+  dateOfBirth: string | null;
+  phoneNumber: string | null;
+  address: string | null;
+  /** Sunday-school / age-group class, or null if not on file. */
+  className: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
