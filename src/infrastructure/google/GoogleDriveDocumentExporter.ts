@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { DocumentExporter, QrSheetEntry } from '../../application/ports/DocumentExporter';
+import { ExportTable } from '../../application/ports/DatabaseExportRepository';
 import { buildQrSheetPdf } from '../pdf/QrSheetPdfBuilder';
 import { NotConfiguredError } from '../../domain/errors/AppError';
 
@@ -53,6 +54,57 @@ export class GoogleDriveDocumentExporter implements DocumentExporter {
     });
 
     return { url: res.data.webViewLink ?? `https://docs.google.com/document/d/${res.data.id}/edit` };
+  }
+
+  /**
+   * Sheets API has no "parent folder" option on creation, so the sheet is built first and then
+   * moved into the shared Drive folder with a Drive `files.update` call — moving a native
+   * Google-format file doesn't touch the service account's (nonexistent) storage quota, same as
+   * creating one doesn't.
+   */
+  async exportDatabaseSheet(tabs: ExportTable[]): Promise<{ url: string }> {
+    if (!this.enabled) {
+      throw new NotConfiguredError(
+        'Google export is not configured yet: set GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_DRIVE_FOLDER_ID in .env',
+      );
+    }
+
+    const credentials = this.loadCredentials(this.config.serviceAccountJson!);
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
+    });
+    const sheetsApi = google.sheets({ version: 'v4', auth });
+    const drive = google.drive({ version: 'v3', auth });
+
+    const title = `Joi Database Export — ${new Date().toISOString().slice(0, 10)}`;
+    const createRes = await sheetsApi.spreadsheets.create({
+      requestBody: {
+        properties: { title },
+        sheets: tabs.map((t) => ({ properties: { title: t.title } })),
+      },
+      fields: 'spreadsheetId',
+    });
+    const spreadsheetId = createRes.data.spreadsheetId!;
+
+    await sheetsApi.spreadsheets.values.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: tabs.map((t) => ({
+          range: `'${t.title}'!A1`,
+          values: [t.headers, ...t.rows],
+        })),
+      },
+    });
+
+    const moved = await drive.files.update({
+      fileId: spreadsheetId,
+      addParents: this.config.driveFolderId!,
+      fields: 'id, webViewLink',
+    });
+
+    return { url: moved.data.webViewLink ?? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` };
   }
 
   private loadCredentials(serviceAccountJson: string): Record<string, unknown> {

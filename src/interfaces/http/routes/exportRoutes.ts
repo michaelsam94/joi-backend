@@ -16,5 +16,14 @@ export function exportRoutes(container: Container): Router {
     }),
   );
 
+  router.post(
+    '/database',
+    requireRole('MODERATOR'),
+    asyncHandler(async (_req, res) => {
+      const result = await container.useCases.exportDatabase.execute();
+      res.json(result);
+    }),
+  );
+
   return router;
 }

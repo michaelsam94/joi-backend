@@ -3,6 +3,7 @@ import { PgUserRepository } from '../infrastructure/db/pg/PgUserRepository';
 import { PgAttendanceRepository } from '../infrastructure/db/pg/PgAttendanceRepository';
 import { PgPointTransactionRepository } from '../infrastructure/db/pg/PgPointTransactionRepository';
 import { PgPrizeRepository } from '../infrastructure/db/pg/PgPrizeRepository';
+import { PgDatabaseExportRepository } from '../infrastructure/db/pg/PgDatabaseExportRepository';
 import { BcryptPasswordHasher } from '../infrastructure/auth/BcryptPasswordHasher';
 import { JwtTokenService } from '../infrastructure/auth/JwtTokenService';
 import { QrCodeGeneratorImpl } from '../infrastructure/qr/QrCodeGeneratorImpl';
@@ -31,6 +32,7 @@ import {
 } from '../application/prizes/PrizeUseCases';
 import { SendWeeklyReportUseCase } from '../application/telegram/SendWeeklyReportUseCase';
 import { ExportQrSheetUseCase } from '../application/export/ExportQrSheetUseCase';
+import { ExportDatabaseUseCase } from '../application/admin/ExportDatabaseUseCase';
 
 import { env } from './env';
 
@@ -44,6 +46,7 @@ export function buildContainer() {
   const attendanceRepo = new PgAttendanceRepository(pool);
   const pointTxRepo = new PgPointTransactionRepository(pool);
   const prizeRepo = new PgPrizeRepository(pool);
+  const dbExportRepo = new PgDatabaseExportRepository(pool);
 
   const hasher = new BcryptPasswordHasher();
   const tokens = new JwtTokenService(env.jwtSecret, env.jwtExpiresIn);
@@ -85,9 +88,23 @@ export function buildContainer() {
       env.telegramAdminChatIds,
     ),
     exportQrSheet: new ExportQrSheetUseCase(userRepo, qr, exporter),
+    exportDatabase: new ExportDatabaseUseCase(dbExportRepo, exporter),
   };
 
-  return { userRepo, attendanceRepo, pointTxRepo, prizeRepo, hasher, tokens, qr, clock, bot, exporter, useCases };
+  return {
+    userRepo,
+    attendanceRepo,
+    pointTxRepo,
+    prizeRepo,
+    dbExportRepo,
+    hasher,
+    tokens,
+    qr,
+    clock,
+    bot,
+    exporter,
+    useCases,
+  };
 }
 
 export type Container = ReturnType<typeof buildContainer>;

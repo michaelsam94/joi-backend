@@ -10,6 +10,8 @@ import { Attendance } from '../../src/domain/entities/Attendance';
 import { PrizeRepository, CreatePrizeData, UpdatePrizeData } from '../../src/application/ports/PrizeRepository';
 import { Prize, PrizeRedemption } from '../../src/domain/entities/Prize';
 import { Clock } from '../../src/application/ports/Clock';
+import { DatabaseExportRepository, ExportTable } from '../../src/application/ports/DatabaseExportRepository';
+import { DocumentExporter, QrSheetEntry } from '../../src/application/ports/DocumentExporter';
 
 let counter = 0;
 const nextId = () => `id-${++counter}`;
@@ -180,5 +182,27 @@ export class FixedClock implements Clock {
   constructor(private readonly date: Date) {}
   now(): Date {
     return this.date;
+  }
+}
+
+export class FakeDatabaseExportRepository implements DatabaseExportRepository {
+  constructor(private readonly tables: ExportTable[] = []) {}
+  async exportAllTables(): Promise<ExportTable[]> {
+    return this.tables;
+  }
+}
+
+export class FakeDocumentExporter implements DocumentExporter {
+  lastQrEntries: QrSheetEntry[] | null = null;
+  lastDatabaseTabs: ExportTable[] | null = null;
+
+  async exportQrSheet(entries: QrSheetEntry[]): Promise<{ url: string }> {
+    this.lastQrEntries = entries;
+    return { url: 'https://docs.google.com/document/d/fake-qr-doc/edit' };
+  }
+
+  async exportDatabaseSheet(tabs: ExportTable[]): Promise<{ url: string }> {
+    this.lastDatabaseTabs = tabs;
+    return { url: 'https://docs.google.com/spreadsheets/d/fake-sheet/edit' };
   }
 }
