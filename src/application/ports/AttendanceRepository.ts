@@ -7,4 +7,6 @@ export interface AttendanceRepository {
   listByDate(meetingDate: Date): Promise<Attendance[]>;
   countByUser(userId: string): Promise<number>;
   countTotalMeetings(): Promise<number>;
+  /** The most recent meeting date this user was checked in for, or null if they never have been. */
+  lastAttendanceDate(userId: string): Promise<Date | null>;
 }

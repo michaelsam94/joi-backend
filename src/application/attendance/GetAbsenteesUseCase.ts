@@ -5,6 +5,9 @@ export interface AbsenteeInfo {
   userId: string;
   fullName: string;
   totalHistoricalAttendance: number;
+  /** YYYY-MM-DD of their most recent attendance, or null if they've never attended (i.e.
+   * totalHistoricalAttendance is 0). */
+  lastAttendanceDate: string | null;
 }
 
 /**
@@ -27,7 +30,13 @@ export class GetAbsenteesUseCase {
     const results: AbsenteeInfo[] = [];
     for (const member of absentMembers) {
       const total = await this.attendance.countByUser(member.id);
-      results.push({ userId: member.id, fullName: member.fullName, totalHistoricalAttendance: total });
+      const lastAttendance = total > 0 ? await this.attendance.lastAttendanceDate(member.id) : null;
+      results.push({
+        userId: member.id,
+        fullName: member.fullName,
+        totalHistoricalAttendance: total,
+        lastAttendanceDate: lastAttendance ? lastAttendance.toISOString().slice(0, 10) : null,
+      });
     }
     return results;
   }

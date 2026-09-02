@@ -71,4 +71,12 @@ export class PgAttendanceRepository implements AttendanceRepository {
     );
     return Number(rows[0].count);
   }
+
+  async lastAttendanceDate(userId: string): Promise<Date | null> {
+    const { rows } = await this.db.query<{ last: Date | null }>(
+      'SELECT MAX(meeting_date) AS last FROM attendance WHERE user_id = $1',
+      [userId],
+    );
+    return rows[0]?.last ?? null;
+  }
 }

@@ -9,7 +9,7 @@ export interface WeeklyReportResult {
   meetingDate: string;
   attendedCount: number;
   totalActiveMembers: number;
-  absentees: Array<{ fullName: string; totalHistoricalAttendance: number }>;
+  absentees: Array<{ fullName: string; totalHistoricalAttendance: number; lastAttendanceDate: string | null }>;
   message: string;
   sentToChatIds: string[];
   /** Chat IDs the bot tried and failed to reach (bad token, wrong chat ID, bot never
@@ -22,7 +22,7 @@ export function formatWeeklyReportMessage(input: {
   meetingDateISO: string;
   attendedCount: number;
   totalActiveMembers: number;
-  absentees: Array<{ fullName: string; totalHistoricalAttendance: number }>;
+  absentees: Array<{ fullName: string; totalHistoricalAttendance: number; lastAttendanceDate: string | null }>;
 }): string {
   const lines: string[] = [];
   lines.push(`📊 *تقرير جوي الأسبوعي* (${input.meetingDateISO})`);
@@ -35,7 +35,9 @@ export function formatWeeklyReportMessage(input: {
   } else {
     lines.push('الغائبون وعدد مرات حضورهم:');
     for (const a of input.absentees) {
-      lines.push(`• ${a.fullName} — حضر ${a.totalHistoricalAttendance} اجتماع (إجمالي)`);
+      const lastAttendedSuffix =
+        a.totalHistoricalAttendance > 0 && a.lastAttendanceDate ? ` — آخر حضور: ${a.lastAttendanceDate}` : '';
+      lines.push(`• ${a.fullName} — حضر ${a.totalHistoricalAttendance} اجتماع (إجمالي)${lastAttendedSuffix}`);
     }
   }
   return lines.join('\n');

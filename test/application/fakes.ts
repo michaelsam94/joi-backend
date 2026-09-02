@@ -116,6 +116,11 @@ export class FakeAttendanceRepository implements AttendanceRepository {
   async countTotalMeetings(): Promise<number> {
     return new Set(this.records.map((r) => r.meetingDate.getTime())).size;
   }
+  async lastAttendanceDate(userId: string): Promise<Date | null> {
+    const mine = this.records.filter((r) => r.userId === userId);
+    if (mine.length === 0) return null;
+    return new Date(Math.max(...mine.map((r) => r.meetingDate.getTime())));
+  }
 }
 
 export class FakePrizeRepository implements PrizeRepository {
