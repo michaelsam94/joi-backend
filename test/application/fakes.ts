@@ -30,6 +30,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     phoneNumber: null,
     address: null,
     className: null,
+    note: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,
@@ -135,6 +136,7 @@ export class FakePrizeRepository implements PrizeRepository {
       pointsCost: data.pointsCost,
       imageUrl: data.imageUrl ?? null,
       active: true,
+      quantity: data.quantity ?? null,
     };
     this.prizes.push(prize);
     return prize;
@@ -162,6 +164,15 @@ export class FakePrizeRepository implements PrizeRepository {
     const redemption: PrizeRedemption = { id: nextId(), prizeId, userId, pointsSpent, redeemedById, createdAt: new Date() };
     this.redemptions.push(redemption);
     return redemption;
+  }
+  async tryReserveOne(prizeId: string): Promise<boolean> {
+    const prize = this.prizes.find((p) => p.id === prizeId);
+    if (!prize || prize.quantity === null || prize.quantity <= 0) return false;
+    prize.quantity -= 1;
+    return true;
+  }
+  async listRedeemedPrizeIdsByUser(userId: string): Promise<string[]> {
+    return Array.from(new Set(this.redemptions.filter((r) => r.userId === userId).map((r) => r.prizeId)));
   }
 }
 

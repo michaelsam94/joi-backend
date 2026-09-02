@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone_number          TEXT,
   address               TEXT,
   class_name            TEXT,
+  note                  TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -30,6 +31,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth DATE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name TEXT;
+-- A free-text note a moderator can keep on a member (birthdays, pastoral notes, whatever) — never
+-- shown to the member themselves, only to moderators (see toDetailedUser/toPublicUser).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS note TEXT;
 
 CREATE TABLE IF NOT EXISTS attendance (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,9 +64,13 @@ CREATE TABLE IF NOT EXISTS prizes (
   points_cost  INTEGER NOT NULL,
   image_url    TEXT,
   active       BOOLEAN NOT NULL DEFAULT TRUE,
+  -- NULL = unlimited stock (the original behavior). A non-null value is remaining stock,
+  -- decremented atomically on each redemption — see PgPrizeRepository.tryReserveOne.
+  quantity     INTEGER,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE prizes ADD COLUMN IF NOT EXISTS quantity INTEGER;
 
 CREATE TABLE IF NOT EXISTS prize_redemptions (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),

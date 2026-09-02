@@ -22,6 +22,12 @@ function toDetailedUser(user: User) {
   };
 }
 
+/** Adds the moderator-only private note on top of the detailed view — never included in
+ * /users/me, so a member never sees notes kept about them. */
+function toModeratorDetailedUser(user: User) {
+  return { ...toDetailedUser(user), note: user.note };
+}
+
 export function userRoutes(container: Container): Router {
   const router = Router();
   router.use(requireAuth(container.tokens));
@@ -33,7 +39,7 @@ export function userRoutes(container: Container): Router {
     validateBody(registerUserSchema),
     asyncHandler(async (req, res) => {
       const user = await container.useCases.registerUser.execute(req.body);
-      res.status(201).json(toDetailedUser(user));
+      res.status(201).json(toModeratorDetailedUser(user));
     }),
   );
 
@@ -44,7 +50,7 @@ export function userRoutes(container: Container): Router {
     asyncHandler(async (req, res) => {
       const users = await container.useCases.listUsers.execute({ activeOnly: req.query.activeOnly !== 'false' });
       if (req.auth!.role === 'MODERATOR') {
-        res.json(users.map(toDetailedUser));
+        res.json(users.map(toModeratorDetailedUser));
       } else {
         res.json(users.map(toPublicUser));
       }
@@ -67,7 +73,7 @@ export function userRoutes(container: Container): Router {
     validateBody(updateUserSchema),
     asyncHandler(async (req, res) => {
       const user = await container.useCases.updateUser.execute(idParam(req), req.body);
-      res.json(toDetailedUser(user));
+      res.json(toModeratorDetailedUser(user));
     }),
   );
 

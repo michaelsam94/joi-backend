@@ -17,6 +17,8 @@ export interface User {
   address: string | null;
   /** Sunday-school / age-group class, or null if not on file. */
   className: string | null;
+  /** A moderator's private free-text note about this member — never shown to the member. */
+  note: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

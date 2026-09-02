@@ -5,6 +5,9 @@ export interface Prize {
   pointsCost: number;
   imageUrl: string | null;
   active: boolean;
+  /** Remaining stock. Null means unlimited (the original behavior — no stock tracking).
+   * 0 means out of stock: redemption is blocked until a moderator raises it again. */
+  quantity: number | null;
 }
 
 export interface PrizeRedemption {

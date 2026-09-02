@@ -27,6 +27,7 @@ import {
   DeletePrizeUseCase,
   ListPrizesUseCase,
   RedeemPrizeUseCase,
+  GetRedeemedPrizeIdsUseCase,
 } from '../application/prizes/PrizeUseCases';
 import { SendWeeklyReportUseCase } from '../application/telegram/SendWeeklyReportUseCase';
 import { ExportQrSheetUseCase } from '../application/export/ExportQrSheetUseCase';
@@ -61,7 +62,7 @@ export function buildContainer() {
     changePassword: new ChangePasswordUseCase(userRepo, hasher),
     registerUser: new RegisterUserUseCase(userRepo, hasher),
     listUsers: new ListUsersUseCase(userRepo),
-    updateUser: new UpdateUserUseCase(userRepo),
+    updateUser: new UpdateUserUseCase(userRepo, hasher),
     getUserQr: new GetUserQrUseCase(userRepo, qr),
     checkIn: new CheckInUseCase(userRepo, attendanceRepo, pointTxRepo, clock, env.attendancePoints, env.meetingDayOfWeek),
     getAbsentees: absenteesUseCase,
@@ -73,6 +74,7 @@ export function buildContainer() {
     deletePrize: new DeletePrizeUseCase(prizeRepo),
     listPrizes: new ListPrizesUseCase(prizeRepo),
     redeemPrize: new RedeemPrizeUseCase(prizeRepo, userRepo, pointTxRepo),
+    getRedeemedPrizeIds: new GetRedeemedPrizeIdsUseCase(prizeRepo),
     sendWeeklyReport: new SendWeeklyReportUseCase(
       userRepo,
       attendanceRepo,

@@ -19,6 +19,16 @@ export function prizeRoutes(container: Container): Router {
     }),
   );
 
+  // Every prize id the signed-in user has personally redeemed before — powers the "you've
+  // redeemed this" badge. Placed before "/:id" routes so it isn't swallowed by them.
+  router.get(
+    '/redeemed-by-me',
+    asyncHandler(async (req, res) => {
+      const prizeIds = await container.useCases.getRedeemedPrizeIds.execute(req.auth!.userId);
+      res.json({ prizeIds });
+    }),
+  );
+
   router.post(
     '/',
     requireRole('MODERATOR'),

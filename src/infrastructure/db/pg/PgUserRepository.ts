@@ -18,6 +18,7 @@ interface UserRow {
   phone_number: string | null;
   address: string | null;
   class_name: string | null;
+  note: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -38,6 +39,7 @@ function toDomain(row: UserRow): User {
     phoneNumber: row.phone_number,
     address: row.address,
     className: row.class_name,
+    note: row.note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -129,6 +131,10 @@ export class PgUserRepository implements UserRepository {
     if (data.className !== undefined) {
       sets.push(`class_name = $${i++}`);
       values.push(data.className);
+    }
+    if (data.note !== undefined) {
+      sets.push(`note = $${i++}`);
+      values.push(data.note);
     }
     sets.push(`updated_at = now()`);
 

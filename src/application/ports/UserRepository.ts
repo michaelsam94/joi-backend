@@ -20,6 +20,7 @@ export interface UpdateUserData {
   phoneNumber?: string | null;
   address?: string | null;
   className?: string | null;
+  note?: string | null;
 }
 
 export interface UserRepository {

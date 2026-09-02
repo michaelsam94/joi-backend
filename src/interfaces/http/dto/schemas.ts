@@ -35,6 +35,9 @@ export const updateUserSchema = z.object({
   phoneNumber: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   className: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
+  /** Set by a moderator to reset a member's forgotten password — see UpdateUserUseCase. */
+  temporaryPassword: z.string().min(6).optional(),
 });
 
 export const checkInSchema = z.object({
@@ -56,6 +59,8 @@ export const createPrizeSchema = z.object({
   description: z.string().nullable().optional(),
   pointsCost: z.number().int().positive(),
   imageUrl: z.string().url().nullable().optional(),
+  /** Starting stock. Omitted/null = unlimited. */
+  quantity: z.number().int().nonnegative().nullable().optional(),
 });
 
 export const updatePrizeSchema = z.object({
@@ -64,6 +69,7 @@ export const updatePrizeSchema = z.object({
   pointsCost: z.number().int().positive().optional(),
   imageUrl: z.string().url().nullable().optional(),
   active: z.boolean().optional(),
+  quantity: z.number().int().nonnegative().nullable().optional(),
 });
 
 export const redeemPrizeSchema = z.object({

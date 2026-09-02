@@ -9,6 +9,7 @@ interface PrizeRow {
   points_cost: number;
   image_url: string | null;
   active: boolean;
+  quantity: number | null;
 }
 
 interface RedemptionRow {
@@ -27,6 +28,7 @@ const toPrize = (row: PrizeRow): Prize => ({
   pointsCost: row.points_cost,
   imageUrl: row.image_url,
   active: row.active,
+  quantity: row.quantity,
 });
 
 const toRedemption = (row: RedemptionRow): PrizeRedemption => ({
@@ -43,9 +45,9 @@ export class PgPrizeRepository implements PrizeRepository {
 
   async create(data: CreatePrizeData): Promise<Prize> {
     const { rows } = await this.db.query<PrizeRow>(
-      `INSERT INTO prizes (name, description, points_cost, image_url)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.name, data.description ?? null, data.pointsCost, data.imageUrl ?? null],
+      `INSERT INTO prizes (name, description, points_cost, image_url, quantity)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [data.name, data.description ?? null, data.pointsCost, data.imageUrl ?? null, data.quantity ?? null],
     );
     return toPrize(rows[0]);
   }
@@ -87,6 +89,10 @@ export class PgPrizeRepository implements PrizeRepository {
       sets.push(`active = $${i++}`);
       values.push(data.active);
     }
+    if (data.quantity !== undefined) {
+      sets.push(`quantity = $${i++}`);
+      values.push(data.quantity);
+    }
     sets.push(`updated_at = now()`);
 
     values.push(id);
@@ -113,5 +119,25 @@ export class PgPrizeRepository implements PrizeRepository {
       [prizeId, userId, pointsSpent, redeemedById],
     );
     return toRedemption(rows[0]);
+  }
+
+  async tryReserveOne(prizeId: string): Promise<boolean> {
+    // The WHERE guard makes this a single atomic check-and-decrement — two concurrent redeems
+    // can't both succeed past the last unit in stock.
+    const { rows } = await this.db.query(
+      `UPDATE prizes SET quantity = quantity - 1, updated_at = now()
+       WHERE id = $1 AND quantity IS NOT NULL AND quantity > 0
+       RETURNING id`,
+      [prizeId],
+    );
+    return rows.length > 0;
+  }
+
+  async listRedeemedPrizeIdsByUser(userId: string): Promise<string[]> {
+    const { rows } = await this.db.query<{ prize_id: string }>(
+      'SELECT DISTINCT prize_id FROM prize_redemptions WHERE user_id = $1',
+      [userId],
+    );
+    return rows.map((r) => r.prize_id);
   }
 }

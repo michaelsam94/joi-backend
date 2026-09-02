@@ -9,6 +9,7 @@ export class CreatePrizeUseCase {
   async execute(data: CreatePrizeData): Promise<Prize> {
     if (!data.name.trim()) throw new ValidationError('Prize name is required');
     if (data.pointsCost <= 0) throw new ValidationError('Points cost must be positive');
+    if (data.quantity != null && data.quantity < 0) throw new ValidationError('Quantity cannot be negative');
     return this.prizes.create(data);
   }
 }
@@ -21,6 +22,7 @@ export class UpdatePrizeUseCase {
     if (data.pointsCost !== undefined && data.pointsCost <= 0) {
       throw new ValidationError('Points cost must be positive');
     }
+    if (data.quantity != null && data.quantity < 0) throw new ValidationError('Quantity cannot be negative');
     return this.prizes.update(id, data);
   }
 }
@@ -73,6 +75,14 @@ export class RedeemPrizeUseCase {
       );
     }
 
+    // Limited-quantity prizes reserve a unit atomically before any points move, so a race between
+    // two redemptions can't both succeed past the last one in stock — and nothing is charged if
+    // the reservation fails.
+    if (prize.quantity !== null) {
+      const reserved = await this.prizes.tryReserveOne(prize.id);
+      if (!reserved) throw new ValidationError(`"${prize.name}" is out of stock`);
+    }
+
     await this.pointTx.create({
       userId: user.id,
       points: -prize.pointsCost,
@@ -83,5 +93,13 @@ export class RedeemPrizeUseCase {
     await this.users.incrementPoints(user.id, -prize.pointsCost);
 
     return this.prizes.createRedemption(prize.id, user.id, prize.pointsCost, input.moderatorId);
+  }
+}
+
+/** Powers the "you've redeemed this" badge — every prize id this one user has redeemed before. */
+export class GetRedeemedPrizeIdsUseCase {
+  constructor(private readonly prizes: PrizeRepository) {}
+  async execute(userId: string): Promise<string[]> {
+    return this.prizes.listRedeemedPrizeIdsByUser(userId);
   }
 }
