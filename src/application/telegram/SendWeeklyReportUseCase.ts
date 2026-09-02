@@ -25,17 +25,17 @@ export function formatWeeklyReportMessage(input: {
   absentees: Array<{ fullName: string; totalHistoricalAttendance: number }>;
 }): string {
   const lines: string[] = [];
-  lines.push(`📊 *Joi — Weekly Report* (${input.meetingDateISO})`);
+  lines.push(`📊 *تقرير جوي الأسبوعي* (${input.meetingDateISO})`);
   lines.push('');
-  lines.push(`✅ Attended today: ${input.attendedCount} / ${input.totalActiveMembers}`);
-  lines.push(`❌ Absent today: ${input.absentees.length}`);
+  lines.push(`✅ الحضور اليوم: ${input.attendedCount} / ${input.totalActiveMembers}`);
+  lines.push(`❌ الغياب اليوم: ${input.absentees.length}`);
   lines.push('');
   if (input.absentees.length === 0) {
-    lines.push('Everyone showed up this week! 🎉');
+    lines.push('حضر الجميع هذا الأسبوع! 🎉');
   } else {
-    lines.push('Absentees & their attendance history:');
+    lines.push('الغائبون وعدد مرات حضورهم:');
     for (const a of input.absentees) {
-      lines.push(`• ${a.fullName} — attended ${a.totalHistoricalAttendance} meeting(s) all-time`);
+      lines.push(`• ${a.fullName} — حضر ${a.totalHistoricalAttendance} اجتماع (إجمالي)`);
     }
   }
   return lines.join('\n');

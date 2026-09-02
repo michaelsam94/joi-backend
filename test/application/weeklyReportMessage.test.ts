@@ -11,10 +11,10 @@ describe('formatWeeklyReportMessage', () => {
         { fullName: 'Mariam Fady', totalHistoricalAttendance: 3 },
       ],
     });
-    expect(msg).toContain('Attended today: 34 / 50');
-    expect(msg).toContain('Absent today: 2');
-    expect(msg).toContain('Mina Samir — attended 12 meeting(s)');
-    expect(msg).toContain('Mariam Fady — attended 3 meeting(s)');
+    expect(msg).toContain('الحضور اليوم: 34 / 50');
+    expect(msg).toContain('الغياب اليوم: 2');
+    expect(msg).toContain('Mina Samir — حضر 12 اجتماع');
+    expect(msg).toContain('Mariam Fady — حضر 3 اجتماع');
   });
 
   it('celebrates full attendance when there are no absentees', () => {
@@ -24,6 +24,6 @@ describe('formatWeeklyReportMessage', () => {
       totalActiveMembers: 10,
       absentees: [],
     });
-    expect(msg).toContain('Everyone showed up this week');
+    expect(msg).toContain('حضر الجميع هذا الأسبوع');
   });
 });
