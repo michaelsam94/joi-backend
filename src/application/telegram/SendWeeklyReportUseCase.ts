@@ -49,6 +49,9 @@ export class SendWeeklyReportUseCase {
     private readonly bot: NotificationBot,
     private readonly clock: Clock,
     private readonly meetingDayOfWeek: number,
+    /** Fixed base recipients from TELEGRAM_ADMIN_CHAT_IDS — merged in `execute()` with every chat
+     * id Telegram reports has recently messaged the bot (see NotificationBot.discoverChatIds),
+     * so the report broadcasts to everyone who's said something to the bot, not only these. */
     private readonly adminChatIds: string[],
   ) {}
 
@@ -70,9 +73,21 @@ export class SendWeeklyReportUseCase {
       absentees,
     });
 
+    // Broadcast to the fixed admin list plus everyone Telegram says has recently messaged the
+    // bot — a curl to getUpdates under the hood — so members don't need to be hand-added to
+    // TELEGRAM_ADMIN_CHAT_IDS one by one. Discovery failing (e.g. a transient network error) must
+    // not stop the send to the chats we already know about.
+    let discoveredChatIds: string[] = [];
+    try {
+      discoveredChatIds = await this.bot.discoverChatIds();
+    } catch (err) {
+      console.error('[telegram] Failed to discover chat ids to broadcast to:', err);
+    }
+    const chatIdsToNotify = Array.from(new Set([...this.adminChatIds, ...discoveredChatIds]));
+
     const sentToChatIds: string[] = [];
     const failedChatIds: string[] = [];
-    for (const chatId of this.adminChatIds) {
+    for (const chatId of chatIdsToNotify) {
       if (!chatId) continue;
       try {
         await this.bot.sendMessage(chatId, message);
