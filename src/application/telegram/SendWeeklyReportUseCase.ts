@@ -12,6 +12,9 @@ export interface WeeklyReportResult {
   absentees: Array<{ fullName: string; totalHistoricalAttendance: number }>;
   message: string;
   sentToChatIds: string[];
+  /** Chat IDs the bot tried and failed to reach (bad token, wrong chat ID, bot never
+   * messaged/blocked, etc). One bad chat no longer crashes the whole request — see `execute()`. */
+  failedChatIds: string[];
 }
 
 /** Pure formatting, kept separate so it's trivially unit-testable without a bot or a clock. */
@@ -68,10 +71,19 @@ export class SendWeeklyReportUseCase {
     });
 
     const sentToChatIds: string[] = [];
+    const failedChatIds: string[] = [];
     for (const chatId of this.adminChatIds) {
       if (!chatId) continue;
-      await this.bot.sendMessage(chatId, message);
-      sentToChatIds.push(chatId);
+      try {
+        await this.bot.sendMessage(chatId, message);
+        sentToChatIds.push(chatId);
+      } catch (err) {
+        // A single bad/misconfigured chat (wrong ID, bot blocked, bad token, etc) must not take
+        // down the whole request — log it for the admin's own `docker compose logs` debugging and
+        // keep going so any other correctly-configured chats still get the report.
+        console.error(`[telegram] Failed to send weekly report to chat ${chatId}:`, err);
+        failedChatIds.push(chatId);
+      }
     }
 
     return {
@@ -81,6 +93,7 @@ export class SendWeeklyReportUseCase {
       absentees,
       message,
       sentToChatIds,
+      failedChatIds,
     };
   }
 }

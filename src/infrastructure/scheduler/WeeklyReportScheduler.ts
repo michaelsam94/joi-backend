@@ -9,7 +9,8 @@ export function scheduleWeeklyReport(useCase: SendWeeklyReportUseCase, cronExpre
       try {
         const result = await useCase.execute();
         console.log(
-          `[scheduler] Weekly report sent for ${result.meetingDate} to ${result.sentToChatIds.length} chat(s)`,
+          `[scheduler] Weekly report sent for ${result.meetingDate} to ${result.sentToChatIds.length} chat(s)` +
+            (result.failedChatIds.length > 0 ? ` (${result.failedChatIds.length} failed)` : ''),
         );
       } catch (err) {
         console.error('[scheduler] Failed to send weekly report', err);
