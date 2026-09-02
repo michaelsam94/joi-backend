@@ -28,6 +28,12 @@ services:
       - "4001:3000"
     volumes:
       - joi_uploads:/app/uploads
+      # Google service-account key for the Drive/Sheets export feature — a plain file on the VPS
+      # host at ./google-service-account.json (gitignored, never committed), read-only inside the
+      # container at the path GOOGLE_SERVICE_ACCOUNT_JSON in .env already points at. Must exist on
+      # the host BEFORE `docker compose up`, or Docker bind-mounts an empty directory there instead
+      # of failing — see the deploy notes for how to place it.
+      - ./google-service-account.json:/app/google-service-account.json:ro
 
 volumes:
   joi_pgdata:
