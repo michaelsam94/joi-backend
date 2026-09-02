@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: joi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-joi}
+      POSTGRES_DB: joi
+    volumes:
+      - joi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joi -d joi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://joi:${POSTGRES_PASSWORD:-joi}@db:5432/joi
+    ports:
+      - "3000:3000"
+
+volumes:
+  joi_pgdata:

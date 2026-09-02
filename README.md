@@ -115,3 +115,46 @@ Until configured, that endpoint returns a clear `503 NOT_CONFIGURED` error inste
 
 Phase 2 is the native Kotlin/Compose Android app (`../joi-android`), built against this API.
 Phase 3 adds streak bonuses, badges, push notifications, and a member-facing Telegram bot.
+
+## Deploying to a VPS (Docker)
+
+The repo ships with a `Dockerfile`, `docker-compose.yml` (backend + Postgres), and a `deploy.sh`
+one-shot script. Verified locally: `npm run build` produces `dist/src/main.js` (the real compiled
+entrypoint — matches `package.json`'s `main`/`start`), `node dist/db/migrate.js` applies
+`db/schema.sql`, and the compiled server boots and answers real requests (`/leaderboard`,
+`/auth/login`) against a local Postgres. The `Dockerfile` couldn't be built inside the sandbox this
+was written in (Docker Hub wasn't reachable from there), so treat the VPS's first `docker compose
+up --build` as its first real build — the pattern is standard multi-stage Node, low risk.
+
+On the VPS:
+
+```bash
+# 1. Get the code onto the server (either works)
+git clone https://github.com/michaelsam94/joi-backend.git /opt/joi-backend
+#   — or, from your own machine: scp -r ./joi-backend root@<vps-ip>:/opt/joi-backend
+
+cd /opt/joi-backend
+
+# 2. First run — this copies .env.production.example to .env and stops so you can edit it
+./deploy.sh
+
+# 3. Edit .env: set JWT_SECRET, POSTGRES_PASSWORD, TELEGRAM_BOT_TOKEN, SEED_MODERATOR_PASSWORD, etc.
+nano .env
+
+# 4. Run again — builds the image, starts Postgres + the backend, applies the schema, seeds the
+#    first moderator account
+./deploy.sh
+```
+
+The backend is then reachable at `http://<vps-ip>:3000`. Point the Android app's `BASE_URL`
+(`app/src/main/java/com/joi/app/AppConfig.kt`) and the Telegram bot's webhook/polling at that
+same address. Adding a domain + HTTPS later is just an Nginx reverse proxy + `certbot` in front of
+port 3000 — not required to get moving.
+
+Useful commands on the VPS afterward:
+```bash
+docker compose logs -f backend      # tail logs
+docker compose restart backend      # restart after an .env change
+docker compose exec backend node dist/db/seed.js   # re-run the seed (no-op if admin already exists)
+git pull && docker compose up -d --build            # deploy an update
+```
