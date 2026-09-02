@@ -73,6 +73,8 @@ Endpoints marked 🔒 require the `MODERATOR` role; everything else just require
 | `GET /prizes` | List prizes |
 | 🔒 `POST /prizes`, `PATCH /prizes/:id`, `DELETE /prizes/:id` | Manage the prize catalog |
 | 🔒 `POST /prizes/:id/redeem` | `{ userId }` — spends their points |
+| 🔒 `POST /uploads/image` | Multipart form, field `image` (JPEG/PNG/WEBP/GIF, ≤5MB) → `{ url }` — use that `url` as a prize's `imageUrl` |
+| `GET /uploads/:filename` | Serves an uploaded image — public, no auth (so `<img>`/Coil requests work without a token) |
 | 🔒 `POST /telegram/send-weekly-report` | Manually fires the same report the Friday cron sends |
 | 🔒 `POST /export/qr-sheet` | Builds the printable QR PDF and uploads it as a Google Doc |
 

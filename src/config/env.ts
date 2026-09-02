@@ -27,4 +27,9 @@ export const env = {
   weeklyReportCron: optional('WEEKLY_REPORT_CRON', '0 13 * * 5'),
   googleServiceAccountJson: optional('GOOGLE_SERVICE_ACCOUNT_JSON') || undefined,
   googleDriveFolderId: optional('GOOGLE_DRIVE_FOLDER_ID') || undefined,
+  /** Used to build absolute URLs for uploaded images (e.g. "https://joi.michaelsam94.com"). If
+   * unset, falls back to building the URL from the incoming request (protocol + host) — see
+   * buildPublicUrl() in uploadRoutes.ts. Set this explicitly in production so it's correct even
+   * if the reverse proxy's forwarded-proto headers aren't configured. */
+  publicBaseUrl: optional('PUBLIC_BASE_URL') || undefined,
 };

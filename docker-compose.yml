@@ -26,6 +26,9 @@ services:
       DATABASE_URL: postgresql://joi:${POSTGRES_PASSWORD:-joi}@db:5432/joi
     ports:
       - "4000:3000"
+    volumes:
+      - joi_uploads:/app/uploads
 
 volumes:
   joi_pgdata:
+  joi_uploads:

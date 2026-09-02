@@ -9,10 +9,15 @@ import { leaderboardRoutes } from './interfaces/http/routes/leaderboardRoutes';
 import { prizeRoutes } from './interfaces/http/routes/prizeRoutes';
 import { telegramRoutes } from './interfaces/http/routes/telegramRoutes';
 import { exportRoutes } from './interfaces/http/routes/exportRoutes';
+import { uploadRoutes, uploadsDir } from './interfaces/http/routes/uploadRoutes';
 import { errorHandler } from './interfaces/http/middleware/errorHandler';
 
 export function buildApp(container: Container): Express {
   const app = express();
+  // Behind a reverse proxy (nginx/certbot terminating HTTPS) in production — without this,
+  // req.protocol always reports 'http' and uploaded-image URLs would be built as http:// even
+  // though the public site is https://.
+  app.set('trust proxy', true);
   app.use(cors());
   app.use(express.json());
 
@@ -26,6 +31,11 @@ export function buildApp(container: Container): Express {
   app.use('/prizes', prizeRoutes(container));
   app.use('/telegram', telegramRoutes(container));
   app.use('/export', exportRoutes(container));
+  // Static image reads are intentionally public (no auth) — Coil/AsyncImage on mobile requests
+  // these plain, without an Authorization header. Only the upload (POST) below requires a
+  // moderator token.
+  app.use('/uploads', express.static(uploadsDir));
+  app.use('/uploads', uploadRoutes(container));
 
   app.use(errorHandler);
   return app;
