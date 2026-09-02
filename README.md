@@ -146,10 +146,11 @@ nano .env
 ./deploy.sh
 ```
 
-The backend is then reachable at `http://<vps-ip>:3000`. Point the Android app's `BASE_URL`
-(`app/src/main/java/com/joi/app/AppConfig.kt`) and the Telegram bot's webhook/polling at that
-same address. Adding a domain + HTTPS later is just an Nginx reverse proxy + `certbot` in front of
-port 3000 — not required to get moving.
+The backend is then reachable at `http://<vps-ip>:4000` (mapped from the container's internal
+port 3000 — see `ports:` in `docker-compose.yml` if you need to change it again). Point the
+Android app's `BASE_URL` (`app/src/main/java/com/joi/app/AppConfig.kt`) and the Telegram bot's
+webhook/polling at that same address. Adding a domain + HTTPS later is just an Nginx reverse
+proxy + `certbot` in front of that port — not required to get moving.
 
 Useful commands on the VPS afterward:
 ```bash

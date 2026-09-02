@@ -25,7 +25,7 @@ services:
     environment:
       DATABASE_URL: postgresql://joi:${POSTGRES_PASSWORD:-joi}@db:5432/joi
     ports:
-      - "3000:3000"
+      - "4000:3000"
 
 volumes:
   joi_pgdata:

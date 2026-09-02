@@ -33,5 +33,5 @@ docker compose exec -T backend node dist/db/migrate.js
 echo "==> Seeding first moderator account (no-op if it already exists)..."
 docker compose exec -T backend node dist/db/seed.js
 
-echo "==> Done. Backend should be reachable at http://$(curl -s -4 ifconfig.me 2>/dev/null || echo '<your-vps-ip>'):3000"
+echo "==> Done. Backend should be reachable at http://$(curl -s -4 ifconfig.me 2>/dev/null || echo '<your-vps-ip>'):4000"
 echo "==> Check logs any time with: docker compose logs -f backend"
