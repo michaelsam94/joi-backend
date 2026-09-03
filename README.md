@@ -71,6 +71,7 @@ Endpoints marked 🔒 require the `MODERATOR` role; everything else just require
 | 🔒 `GET /attendance?meetingDate=` | Who attended a given meeting (defaults to this week) |
 | 🔒 `GET /attendance/absentees?meetingDate=` | Who didn't, with each one's all-time attendance count |
 | 🔒 `POST /attendance/raffle-number` | `{ userId }` — hands out a temporary draw number. Idempotent: returns the one they already hold |
+| 🔒 `GET /attendance/raffle-numbers` | Every number in play, sorted, with no indication of who holds which → `{ numbers, count }` |
 | 🔒 `POST /attendance/raffle-number/reset` | Clears everyone's draw number → `{ cleared }` |
 | 🔒 `POST /points/adjust` | `{ userId, points, reason }` — points can be negative |
 | `GET /leaderboard` | Ranked list with level badges |
@@ -138,6 +139,10 @@ activity never hands out a single number.
 - Members see their own number on `GET /users/me`. When the moderator resets, the field simply
   stops being sent — the number disappears from their profile with nothing on the client having to
   remember to clear it.
+- `GET /attendance/raffle-numbers` returns the pool a moderator draws *from*: the numbers and
+  nothing else, sorted. Check-in order would leak the very link this withholds (the moderator
+  scanned people in that order), so the sort is deliberate, not cosmetic. Matching a drawn number
+  back to a person is a separate step — searching it on the members list.
 - The pool is 1–999 (`MAX_RAFFLE_NUMBER`). Draws are uniform over the *free* numbers rather than
   guess-and-retry, so handing out the last few numbers still terminates; once the pool is empty the
   moderator is told to reset rather than left waiting.

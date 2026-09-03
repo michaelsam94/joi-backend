@@ -60,6 +60,28 @@ export class AssignRaffleNumberUseCase {
   }
 }
 
+export interface ListRaffleNumbersOutput {
+  numbers: number[];
+  count: number;
+}
+
+/**
+ * Every draw number currently in play, and nothing else — no names, no user ids.
+ *
+ * This is what a moderator draws *from*: seeing the pool without seeing who holds what keeps the
+ * pick honest. Sorted ascending on purpose — check-in order would leak the very link this is meant
+ * to withhold, since the moderator scanned people in that order. Matching a drawn number back to a
+ * person is a separate, deliberate step (the members list).
+ */
+export class ListRaffleNumbersUseCase {
+  constructor(private readonly users: UserRepository) {}
+
+  async execute(): Promise<ListRaffleNumbersOutput> {
+    const numbers = (await this.users.listTakenRaffleNumbers()).sort((a, b) => a - b);
+    return { numbers, count: numbers.length };
+  }
+}
+
 export interface ResetRaffleNumbersOutput {
   cleared: number;
 }

@@ -58,6 +58,17 @@ export function attendanceRoutes(container: Container): Router {
     }),
   );
 
+  // Every number in play, with no indication of who holds which — the pool a moderator draws
+  // from. Finding the person behind a drawn number is a separate step (the members list).
+  router.get(
+    '/raffle-numbers',
+    requireRole('MODERATOR'),
+    asyncHandler(async (_req, res) => {
+      const result = await container.useCases.listRaffleNumbers.execute();
+      res.json(result);
+    }),
+  );
+
   // "The activity is over" — clears every number at once, so they vanish from members' profiles.
   router.post(
     '/raffle-number/reset',

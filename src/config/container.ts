@@ -45,6 +45,7 @@ import {
 } from '../application/events/EventUseCases';
 import {
   AssignRaffleNumberUseCase,
+  ListRaffleNumbersUseCase,
   ResetRaffleNumbersUseCase,
 } from '../application/raffle/RaffleUseCases';
 import { SendWeeklyReportUseCase } from '../application/telegram/SendWeeklyReportUseCase';
@@ -88,6 +89,7 @@ export function buildContainer() {
     checkIn: new CheckInUseCase(userRepo, attendanceRepo, pointTxRepo, clock, env.attendancePoints, env.meetingDayOfWeek),
     getAbsentees: absenteesUseCase,
     assignRaffleNumber: new AssignRaffleNumberUseCase(userRepo),
+    listRaffleNumbers: new ListRaffleNumbersUseCase(userRepo),
     resetRaffleNumbers: new ResetRaffleNumbersUseCase(userRepo),
     adjustPoints: new AdjustPointsUseCase(userRepo, pointTxRepo),
     getPointsHistory: new GetPointsHistoryUseCase(userRepo, pointTxRepo),

@@ -1,4 +1,8 @@
-import { AssignRaffleNumberUseCase, ResetRaffleNumbersUseCase } from '../../src/application/raffle/RaffleUseCases';
+import {
+  AssignRaffleNumberUseCase,
+  ListRaffleNumbersUseCase,
+  ResetRaffleNumbersUseCase,
+} from '../../src/application/raffle/RaffleUseCases';
 import { pickRaffleNumber, MAX_RAFFLE_NUMBER } from '../../src/domain/entities/User';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../src/domain/errors/AppError';
 import { FakeUserRepository } from './fakes';
@@ -85,6 +89,71 @@ describe('AssignRaffleNumberUseCase', () => {
     const unlucky = await makeMember(users, 'Unlucky');
 
     await expect(useCase.execute(unlucky.id)).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe('ListRaffleNumbersUseCase', () => {
+  it('returns the numbers in play and nothing that could identify who holds them', async () => {
+    const users = new FakeUserRepository();
+    const assign = new AssignRaffleNumberUseCase(users);
+    const a = await makeMember(users, 'A');
+    const b = await makeMember(users, 'B');
+    await makeMember(users, 'C'); // never given one — must not appear as a blank
+    await users.assignRaffleNumber(a.id, 90);
+    await users.assignRaffleNumber(b.id, 7);
+    void assign;
+
+    const result = await new ListRaffleNumbersUseCase(users).execute();
+
+    // Sorted, not check-in order: the scan order is the moderator's own and would give away who
+    // holds which — the exact link this view exists to withhold.
+    expect(result.numbers).toEqual([7, 90]);
+    expect(result.count).toBe(2);
+    // Plain numbers, no object carrying a name or id alongside.
+    expect(result.numbers.every((n) => typeof n === 'number')).toBe(true);
+  });
+
+  it('is empty before anyone is given a number, and again after a reset', async () => {
+    const users = new FakeUserRepository();
+    const list = new ListRaffleNumbersUseCase(users);
+    const member = await makeMember(users, 'A');
+
+    expect(await list.execute()).toEqual({ numbers: [], count: 0 });
+    await new AssignRaffleNumberUseCase(users).execute(member.id);
+    expect((await list.execute()).count).toBe(1);
+    await new ResetRaffleNumbersUseCase(users).execute();
+    expect(await list.execute()).toEqual({ numbers: [], count: 0 });
+  });
+});
+
+describe('ListRaffleNumbersUseCase', () => {
+  it('returns the numbers in play and nothing that could identify who holds them', async () => {
+    const users = new FakeUserRepository();
+    const a = await makeMember(users, 'A');
+    const b = await makeMember(users, 'B');
+    await makeMember(users, 'C'); // never given one — must not show up as a blank
+    await users.assignRaffleNumber(a.id, 90);
+    await users.assignRaffleNumber(b.id, 7);
+
+    const result = await new ListRaffleNumbersUseCase(users).execute();
+
+    // Sorted, not check-in order: the scan order is the moderator's own, and would give away who
+    // holds which — the exact link this view exists to withhold.
+    expect(result.numbers).toEqual([7, 90]);
+    expect(result.count).toBe(2);
+    expect(result.numbers.every((n) => typeof n === 'number')).toBe(true);
+  });
+
+  it('is empty before anyone is given a number, and again after a reset', async () => {
+    const users = new FakeUserRepository();
+    const list = new ListRaffleNumbersUseCase(users);
+    const member = await makeMember(users, 'A');
+
+    expect(await list.execute()).toEqual({ numbers: [], count: 0 });
+    await new AssignRaffleNumberUseCase(users).execute(member.id);
+    expect((await list.execute()).count).toBe(1);
+    await new ResetRaffleNumbersUseCase(users).execute();
+    expect(await list.execute()).toEqual({ numbers: [], count: 0 });
   });
 });
 
