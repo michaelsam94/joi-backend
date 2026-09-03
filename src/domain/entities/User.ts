@@ -19,6 +19,9 @@ export interface User {
   className: string | null;
   /** A moderator's private free-text note about this member — never shown to the member. */
   note: string | null;
+  /** A temporary draw number handed out at check-in for use during the meeting, or null when
+   * they don't currently hold one. Cleared for everyone at once — see ResetRaffleNumbersUseCase. */
+  raffleNumber: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +39,28 @@ const LEVEL_THRESHOLDS: Array<{ level: Level; min: number }> = [
 export function levelForPoints(totalPoints: number): Level {
   const match = LEVEL_THRESHOLDS.find((t) => totalPoints >= t.min);
   return match ? match.level : 'Bronze';
+}
+
+/** The largest draw number that can be handed out. A meeting-sized pool: short enough to call
+ * across a room and write on a slip, wide enough that numbers stay memorable and distinct. */
+export const MAX_RAFFLE_NUMBER = 999;
+
+/**
+ * Pure domain rule: pick a draw number nobody currently holds, uniformly at random from the free
+ * ones. Building the free list (rather than guessing and retrying) means this always terminates
+ * and stays unbiased even when most of the pool is taken.
+ *
+ * Returns null when every number is already handed out — the caller turns that into a "reset the
+ * numbers first" error rather than looping forever.
+ */
+export function pickRaffleNumber(taken: Iterable<number>, random: () => number = Math.random): number | null {
+  const used = new Set(taken);
+  const free: number[] = [];
+  for (let n = 1; n <= MAX_RAFFLE_NUMBER; n++) {
+    if (!used.has(n)) free.push(n);
+  }
+  if (free.length === 0) return null;
+  return free[Math.floor(random() * free.length)];
 }
 
 /** Strips fields a MEMBER should never see about another user. */

@@ -35,6 +35,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name TEXT;
 -- shown to the member themselves, only to moderators (see toDetailedUser/toPublicUser).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS note TEXT;
 
+-- A temporary draw number handed out at check-in and used during the meeting (raffles, picking
+-- teams, whatever the moderator needs). Deliberately NOT history: there is one column, a moderator
+-- clears every number at once when the activity is over, and NULL means "nothing to show".
+ALTER TABLE users ADD COLUMN IF NOT EXISTS raffle_number INTEGER;
+-- Partial unique index: two people must never hold the same number at the same time, but any
+-- number of people can hold NULL (nobody has one).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_raffle_number ON users(raffle_number) WHERE raffle_number IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS attendance (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

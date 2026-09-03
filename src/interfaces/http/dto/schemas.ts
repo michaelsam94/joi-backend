@@ -48,6 +48,10 @@ export const checkInSchema = z.object({
     .optional(),
 });
 
+export const assignRaffleNumberSchema = z.object({
+  userId: z.string().min(1),
+});
+
 export const adjustPointsSchema = z.object({
   userId: z.string().min(1),
   points: z.number().int().refine((v) => v !== 0, 'points cannot be 0'),

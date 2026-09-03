@@ -3,7 +3,7 @@ import { Container } from '../../../config/container';
 import { asyncHandler } from '../middleware/errorHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
-import { checkInSchema } from '../dto/schemas';
+import { checkInSchema, assignRaffleNumberSchema } from '../dto/schemas';
 import { currentMeetingDate } from '../../../domain/entities/Attendance';
 import { env } from '../../../config/env';
 
@@ -40,6 +40,31 @@ export function attendanceRoutes(container: Container): Router {
       const meetingDate = parseMeetingDateQuery(req.query.meetingDate);
       const rows = await container.attendanceRepo.listByDate(meetingDate);
       res.json({ meetingDate: meetingDate.toISOString().slice(0, 10), attendees: rows });
+    }),
+  );
+
+  /**
+   * Optional follow-up to a check-in: hand the member a temporary draw number for the meeting.
+   * Separate from /check-in on purpose — the moderator decides per person, from the popup, and a
+   * meeting with no raffle never calls this at all.
+   */
+  router.post(
+    '/raffle-number',
+    requireRole('MODERATOR'),
+    validateBody(assignRaffleNumberSchema),
+    asyncHandler(async (req, res) => {
+      const result = await container.useCases.assignRaffleNumber.execute(req.body.userId);
+      res.status(201).json(result);
+    }),
+  );
+
+  // "The activity is over" — clears every number at once, so they vanish from members' profiles.
+  router.post(
+    '/raffle-number/reset',
+    requireRole('MODERATOR'),
+    asyncHandler(async (req, res) => {
+      const result = await container.useCases.resetRaffleNumbers.execute();
+      res.json(result);
     }),
   );
 

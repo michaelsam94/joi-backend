@@ -19,6 +19,7 @@ interface UserRow {
   address: string | null;
   class_name: string | null;
   note: string | null;
+  raffle_number: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -40,6 +41,7 @@ function toDomain(row: UserRow): User {
     address: row.address,
     className: row.class_name,
     note: row.note,
+    raffleNumber: row.raffle_number,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -159,5 +161,34 @@ export class PgUserRepository implements UserRepository {
       [delta, id],
     );
     return toDomain(rows[0]);
+  }
+
+  async listTakenRaffleNumbers(): Promise<number[]> {
+    const { rows } = await this.db.query<{ raffle_number: number }>(
+      'SELECT raffle_number FROM users WHERE raffle_number IS NOT NULL',
+    );
+    return rows.map((r) => r.raffle_number);
+  }
+
+  async assignRaffleNumber(id: string, raffleNumber: number): Promise<User | null> {
+    try {
+      const { rows } = await this.db.query<UserRow>(
+        'UPDATE users SET raffle_number = $1, updated_at = now() WHERE id = $2 RETURNING *',
+        [raffleNumber, id],
+      );
+      return rows[0] ? toDomain(rows[0]) : null;
+    } catch (e: any) {
+      // Two moderators scanning at once can pick the same free number; the partial unique index
+      // catches it here and the use-case picks another rather than showing an error.
+      if (e?.code === UNIQUE_VIOLATION) return null;
+      throw e;
+    }
+  }
+
+  async clearAllRaffleNumbers(): Promise<number> {
+    const result = await this.db.query(
+      'UPDATE users SET raffle_number = NULL, updated_at = now() WHERE raffle_number IS NOT NULL',
+    );
+    return result.rowCount ?? 0;
   }
 }

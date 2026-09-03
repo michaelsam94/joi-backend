@@ -33,4 +33,11 @@ export interface UserRepository {
   setPassword(id: string, passwordHash: string, mustChangePassword: boolean): Promise<void>;
   /** Atomically adjust the denormalized totalPoints cache by a signed delta. */
   incrementPoints(id: string, delta: number): Promise<User>;
+  /** Every draw number currently held by somebody — the pool to pick a fresh one out of. */
+  listTakenRaffleNumbers(): Promise<number[]>;
+  /** Hands one member a draw number. Returns null if the number was claimed by a concurrent
+   * assignment in the meantime, so the caller can pick again rather than fail the moderator. */
+  assignRaffleNumber(id: string, raffleNumber: number): Promise<User | null>;
+  /** Clears everyone's draw number at once; resolves to how many were cleared. */
+  clearAllRaffleNumbers(): Promise<number>;
 }

@@ -42,6 +42,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     address: null,
     className: null,
     note: null,
+    raffleNumber: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,
@@ -82,6 +83,24 @@ export class FakeUserRepository implements UserRepository {
     const user = this.users.find((u) => u.id === id)!;
     user.totalPoints += delta;
     return user;
+  }
+  async listTakenRaffleNumbers(): Promise<number[]> {
+    return this.users.map((u) => u.raffleNumber).filter((n): n is number => n !== null);
+  }
+  async assignRaffleNumber(id: string, raffleNumber: number): Promise<User | null> {
+    // Mirrors the partial unique index: a number already held by someone else is refused, which
+    // is what tells the use-case to pick again.
+    if (this.users.some((u) => u.id !== id && u.raffleNumber === raffleNumber)) return null;
+    const user = this.users.find((u) => u.id === id)!;
+    user.raffleNumber = raffleNumber;
+    return user;
+  }
+  async clearAllRaffleNumbers(): Promise<number> {
+    const held = this.users.filter((u) => u.raffleNumber !== null);
+    held.forEach((u) => {
+      u.raffleNumber = null;
+    });
+    return held.length;
   }
 }
 

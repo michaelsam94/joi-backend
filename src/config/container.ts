@@ -43,6 +43,10 @@ import {
   DeleteEventPaymentUseCase,
   SetMemberEventTotalUseCase,
 } from '../application/events/EventUseCases';
+import {
+  AssignRaffleNumberUseCase,
+  ResetRaffleNumbersUseCase,
+} from '../application/raffle/RaffleUseCases';
 import { SendWeeklyReportUseCase } from '../application/telegram/SendWeeklyReportUseCase';
 import { ExportQrSheetUseCase } from '../application/export/ExportQrSheetUseCase';
 import { ExportDatabaseUseCase } from '../application/admin/ExportDatabaseUseCase';
@@ -83,6 +87,8 @@ export function buildContainer() {
     getUserQr: new GetUserQrUseCase(userRepo, qr),
     checkIn: new CheckInUseCase(userRepo, attendanceRepo, pointTxRepo, clock, env.attendancePoints, env.meetingDayOfWeek),
     getAbsentees: absenteesUseCase,
+    assignRaffleNumber: new AssignRaffleNumberUseCase(userRepo),
+    resetRaffleNumbers: new ResetRaffleNumbersUseCase(userRepo),
     adjustPoints: new AdjustPointsUseCase(userRepo, pointTxRepo),
     getPointsHistory: new GetPointsHistoryUseCase(userRepo, pointTxRepo),
     getLeaderboard: new GetLeaderboardUseCase(userRepo),

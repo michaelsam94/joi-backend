@@ -19,6 +19,10 @@ function toDetailedUser(user: User) {
     phoneNumber: user.phoneNumber,
     address: user.address,
     className: user.className,
+    // The temporary draw number from check-in. Members see their own here (via /users/me) and it
+    // simply stops being sent once a moderator resets the numbers — nothing on the client has to
+    // remember to clear it.
+    raffleNumber: user.raffleNumber,
   };
 }
 

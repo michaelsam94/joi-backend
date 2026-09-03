@@ -70,6 +70,8 @@ Endpoints marked 🔒 require the `MODERATOR` role; everything else just require
 | 🔒 `POST /attendance/check-in` | `{ qrToken, meetingDate? }` — records attendance + awards points |
 | 🔒 `GET /attendance?meetingDate=` | Who attended a given meeting (defaults to this week) |
 | 🔒 `GET /attendance/absentees?meetingDate=` | Who didn't, with each one's all-time attendance count |
+| 🔒 `POST /attendance/raffle-number` | `{ userId }` — hands out a temporary draw number. Idempotent: returns the one they already hold |
+| 🔒 `POST /attendance/raffle-number/reset` | Clears everyone's draw number → `{ cleared }` |
 | 🔒 `POST /points/adjust` | `{ userId, points, reason }` — points can be negative |
 | `GET /leaderboard` | Ranked list with level badges |
 | `GET /prizes` | List prizes |
@@ -121,6 +123,24 @@ Until configured, that endpoint returns a clear `503 NOT_CONFIGURED` error inste
   (see `levelForPoints` in `src/domain/entities/User.ts` if you want to retune the thresholds).
 - Every point change — attendance, a moderator's manual add/remove, a prize redemption — is logged
   as a `PointTransaction` with a reason, so `GET /users/:id/points/history` is always a full audit trail.
+
+## Draw numbers
+
+An optional extra at check-in: the moderator can hand the person a temporary number to use during
+the meeting — a raffle, picking teams, whatever. It's per-person and per-tap, so a meeting with no
+activity never hands out a single number.
+
+- The number lives in one nullable `users.raffle_number` column — deliberately not history. A
+  partial unique index guarantees no two people hold the same number at once.
+- Assignment is **idempotent**: asking again for someone who already holds a number returns that
+  same number (`alreadyHeld: true`). By the time a moderator taps twice the member has usually
+  written theirs down, and silently redrawing would put two different numbers in the room.
+- Members see their own number on `GET /users/me`. When the moderator resets, the field simply
+  stops being sent — the number disappears from their profile with nothing on the client having to
+  remember to clear it.
+- The pool is 1–999 (`MAX_RAFFLE_NUMBER`). Draws are uniform over the *free* numbers rather than
+  guess-and-retry, so handing out the last few numbers still terminates; once the pool is empty the
+  moderator is told to reset rather than left waiting.
 
 ## Event payments
 
