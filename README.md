@@ -34,7 +34,9 @@ concrete infrastructure classes into use-cases.
 4. `npm run db:migrate` — applies `db/schema.sql`.
 5. `npm run db:seed` — creates the first moderator account (`admin` / `ChangeMe123` by default;
    override with `SEED_MODERATOR_USERNAME` / `SEED_MODERATOR_PASSWORD` / `SEED_MODERATOR_NAME`
-   env vars). They'll be forced to set their own password on first login.
+   env vars). They'll be forced to set their own password on first login, and the account is
+   protected (see "Protected accounts" below) — the seed is also how an already-deployed database
+   picks up that protection, since `deploy.sh` re-runs it on every deploy.
 6. `npm run dev` — starts the API on `http://localhost:3000` with auto-reload.
 
 For production: `npm run build && npm start`.
@@ -124,6 +126,22 @@ Until configured, that endpoint returns a clear `503 NOT_CONFIGURED` error inste
   (see `levelForPoints` in `src/domain/entities/User.ts` if you want to retune the thresholds).
 - Every point change — attendance, a moderator's manual add/remove, a prize redemption — is logged
   as a `PointTransaction` with a reason, so `GET /users/:id/points/history` is always a full audit trail.
+
+## Protected accounts
+
+The seeded first moderator (`db/seed.ts`) is marked `is_protected` and cannot be deactivated, have
+its password reset, or have any of its data changed by another moderator through
+`PATCH /users/:id` — that endpoint refuses the request outright (`ForbiddenError`) the moment the
+target account is protected, before looking at what changed. Adding or removing points is
+unaffected (that's an audit trail, not account data), and the protected account can always change
+its *own* password through the ordinary self-service `POST /auth/change-password` — the block is
+only on another moderator acting on it.
+
+`is_protected` is never accepted as API input anywhere — the only way an account becomes protected
+is the seed script (on creation, or retroactively via `UPDATE ... WHERE username = $1` when it
+already exists) or a manual `UPDATE users SET is_protected = TRUE WHERE id = '<uuid>'` run directly
+against the database. That's deliberate: a flag a moderator could set through the API would be a
+flag a moderator could unset.
 
 ## Draw numbers
 

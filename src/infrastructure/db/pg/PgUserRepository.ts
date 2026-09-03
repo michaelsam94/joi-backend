@@ -20,6 +20,7 @@ interface UserRow {
   class_name: string | null;
   note: string | null;
   raffle_number: number | null;
+  is_protected: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -42,6 +43,7 @@ function toDomain(row: UserRow): User {
     className: row.class_name,
     note: row.note,
     raffleNumber: row.raffle_number,
+    isProtected: row.is_protected,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

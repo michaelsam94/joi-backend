@@ -1,6 +1,6 @@
 import { UserRepository, UpdateUserData } from '../ports/UserRepository';
 import { PasswordHasher } from '../ports/PasswordHasher';
-import { NotFoundError, ValidationError } from '../../domain/errors/AppError';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors/AppError';
 import { User } from '../../domain/entities/User';
 
 export interface UpdateUserInput extends UpdateUserData {
@@ -15,6 +15,14 @@ export class UpdateUserUseCase {
   async execute(userId: string, data: UpdateUserInput): Promise<User> {
     const existing = await this.users.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
+
+    // A protected account (the seeded first moderator — see db/seed.ts) can't be touched through
+    // this path at all: not deactivated, not reset, not edited. They still change their own
+    // password themselves via the ordinary self-service /auth/change-password — this only blocks
+    // another moderator acting on them.
+    if (existing.isProtected) {
+      throw new ForbiddenError('This account is protected and cannot be changed');
+    }
 
     const { temporaryPassword, ...profileData } = data;
     let user = await this.users.update(userId, profileData);

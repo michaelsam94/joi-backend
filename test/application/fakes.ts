@@ -43,6 +43,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     className: null,
     note: null,
     raffleNumber: null,
+    isProtected: false,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,

@@ -22,6 +22,10 @@ export interface User {
   /** A temporary draw number handed out at check-in for use during the meeting, or null when
    * they don't currently hold one. Cleared for everyone at once — see ResetRaffleNumbersUseCase. */
   raffleNumber: number | null;
+  /** True only for the seeded first moderator account (or anyone else promoted by hand in the
+   * database) — never settable through the API. UpdateUserUseCase refuses every change to a
+   * protected account: no deactivating it, no resetting its password, no editing its profile. */
+  isProtected: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

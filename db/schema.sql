@@ -35,6 +35,12 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name TEXT;
 -- shown to the member themselves, only to moderators (see toDetailedUser/toPublicUser).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS note TEXT;
 
+-- Marks an account (the seeded first moderator, see db/seed.ts) that nobody can deactivate, reset
+-- the password of, or edit the data of via PATCH /users/:id — see UpdateUserUseCase. Never
+-- settable through the API; only the seed script and direct DB access touch this column, which is
+-- exactly what keeps it meaningful as a "this one is safe no matter what a moderator does" flag.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_protected BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- A temporary draw number handed out at check-in and used during the meeting (raffles, picking
 -- teams, whatever the moderator needs). Deliberately NOT history: there is one column, a moderator
 -- clears every number at once when the activity is over, and NULL means "nothing to show".

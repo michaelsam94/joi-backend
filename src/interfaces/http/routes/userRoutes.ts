@@ -26,10 +26,12 @@ function toDetailedUser(user: User) {
   };
 }
 
-/** Adds the moderator-only private note on top of the detailed view — never included in
- * /users/me, so a member never sees notes kept about them. */
+/** Adds the moderator-only private note, and whether the account is protected, on top of the
+ * detailed view — never included in /users/me, so a member never sees notes kept about them.
+ * `isProtected` lets the app grey out edit/deactivate/reset-password controls for this account
+ * instead of only discovering it's blocked after a failed request. */
 function toModeratorDetailedUser(user: User) {
-  return { ...toDetailedUser(user), note: user.note };
+  return { ...toDetailedUser(user), note: user.note, isProtected: user.isProtected };
 }
 
 export function userRoutes(container: Container): Router {
