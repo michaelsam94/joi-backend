@@ -3,6 +3,7 @@ import { PgUserRepository } from '../infrastructure/db/pg/PgUserRepository';
 import { PgAttendanceRepository } from '../infrastructure/db/pg/PgAttendanceRepository';
 import { PgPointTransactionRepository } from '../infrastructure/db/pg/PgPointTransactionRepository';
 import { PgPrizeRepository } from '../infrastructure/db/pg/PgPrizeRepository';
+import { PgEventRepository } from '../infrastructure/db/pg/PgEventRepository';
 import { PgDatabaseExportRepository } from '../infrastructure/db/pg/PgDatabaseExportRepository';
 import { BcryptPasswordHasher } from '../infrastructure/auth/BcryptPasswordHasher';
 import { JwtTokenService } from '../infrastructure/auth/JwtTokenService';
@@ -30,6 +31,18 @@ import {
   RedeemPrizeUseCase,
   GetRedeemedPrizeIdsUseCase,
 } from '../application/prizes/PrizeUseCases';
+import {
+  CreateEventUseCase,
+  UpdateEventUseCase,
+  DeleteEventUseCase,
+  ListEventsUseCase,
+  GetEventRosterUseCase,
+  GetMyEventPaymentsUseCase,
+  RecordEventPaymentUseCase,
+  UpdateEventPaymentUseCase,
+  DeleteEventPaymentUseCase,
+  SetMemberEventTotalUseCase,
+} from '../application/events/EventUseCases';
 import { SendWeeklyReportUseCase } from '../application/telegram/SendWeeklyReportUseCase';
 import { ExportQrSheetUseCase } from '../application/export/ExportQrSheetUseCase';
 import { ExportDatabaseUseCase } from '../application/admin/ExportDatabaseUseCase';
@@ -46,6 +59,7 @@ export function buildContainer() {
   const attendanceRepo = new PgAttendanceRepository(pool);
   const pointTxRepo = new PgPointTransactionRepository(pool);
   const prizeRepo = new PgPrizeRepository(pool);
+  const eventRepo = new PgEventRepository(pool);
   const dbExportRepo = new PgDatabaseExportRepository(pool);
 
   const hasher = new BcryptPasswordHasher();
@@ -78,6 +92,16 @@ export function buildContainer() {
     listPrizes: new ListPrizesUseCase(prizeRepo),
     redeemPrize: new RedeemPrizeUseCase(prizeRepo, userRepo, pointTxRepo),
     getRedeemedPrizeIds: new GetRedeemedPrizeIdsUseCase(prizeRepo),
+    createEvent: new CreateEventUseCase(eventRepo),
+    updateEvent: new UpdateEventUseCase(eventRepo),
+    deleteEvent: new DeleteEventUseCase(eventRepo),
+    listEvents: new ListEventsUseCase(eventRepo, clock),
+    getEventRoster: new GetEventRosterUseCase(eventRepo, userRepo),
+    getMyEventPayments: new GetMyEventPaymentsUseCase(eventRepo),
+    recordEventPayment: new RecordEventPaymentUseCase(eventRepo, userRepo),
+    updateEventPayment: new UpdateEventPaymentUseCase(eventRepo),
+    deleteEventPayment: new DeleteEventPaymentUseCase(eventRepo),
+    setMemberEventTotal: new SetMemberEventTotalUseCase(eventRepo, userRepo),
     sendWeeklyReport: new SendWeeklyReportUseCase(
       userRepo,
       attendanceRepo,
@@ -96,6 +120,7 @@ export function buildContainer() {
     attendanceRepo,
     pointTxRepo,
     prizeRepo,
+    eventRepo,
     dbExportRepo,
     hasher,
     tokens,

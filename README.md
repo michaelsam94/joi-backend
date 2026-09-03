@@ -45,10 +45,12 @@ For production: `npm run build && npm start`.
 npm test
 ```
 
-19 unit tests cover the business-logic-bearing parts of the domain/application layers: leaderboard
+Unit tests cover the business-logic-bearing parts of the domain/application layers: leaderboard
 ranking (including ties), level thresholds, the meeting-date rollback rule, weekly-report message
 formatting, check-in (including the "can't double-award points by re-scanning" rule), manual point
-adjustment validation, and prize redemption (including insufficient-balance rejection).
+adjustment validation, prize redemption (including insufficient-balance rejection), and event
+payments (installments accumulating, corrections, setting a total outright, the upcoming-events
+cutoff, and the rule that a member's own balance never leaks anyone else's).
 
 ## API summary
 
@@ -73,6 +75,13 @@ Endpoints marked 🔒 require the `MODERATOR` role; everything else just require
 | `GET /prizes` | List prizes |
 | 🔒 `POST /prizes`, `PATCH /prizes/:id`, `DELETE /prizes/:id` | Manage the prize catalog |
 | 🔒 `POST /prizes/:id/redeem` | `{ userId }` — spends their points |
+| `GET /events` | Upcoming events, each with *your own* paid/remaining amounts. `?upcomingOnly=false` includes past ones; moderators may add `?activeOnly=false` |
+| 🔒 `POST /events`, `PATCH /events/:id`, `DELETE /events/:id` | Manage events: `{ name, description?, location?, price, eventDate, eventTime?, imageUrl? }` |
+| 🔒 `GET /events/:id/payments` | The payment sheet: every member with what they've paid, what's left, and each installment |
+| `GET /events/:id/payments/me` | Your own installments and balance for one event |
+| 🔒 `POST /events/:id/payments` | `{ userId, amount, note? }` — records one installment (negative = refund/correction) |
+| 🔒 `PUT /events/:id/payments/member/:userId` | `{ total }` — sets a member's running total outright, as a balancing entry |
+| 🔒 `PATCH /events/:id/payments/:paymentId`, `DELETE /events/:id/payments/:paymentId` | Correct or remove one installment |
 | 🔒 `POST /uploads/image` | Multipart form, field `image` (JPEG/PNG/WEBP/GIF, ≤5MB) → `{ url }` — use that `url` as a prize's `imageUrl` |
 | `GET /uploads/:filename` | Serves an uploaded image — public, no auth (so `<img>`/Coil requests work without a token) |
 | 🔒 `POST /telegram/send-weekly-report` | Manually fires the same report the Friday cron sends |
@@ -112,6 +121,25 @@ Until configured, that endpoint returns a clear `503 NOT_CONFIGURED` error inste
   (see `levelForPoints` in `src/domain/entities/User.ts` if you want to retune the thresholds).
 - Every point change — attendance, a moderator's manual add/remove, a prize redemption — is logged
   as a `PointTransaction` with a reason, so `GET /users/:id/points/history` is always a full audit trail.
+
+## Event payments
+
+An event's price can be settled in one payment or across as many as a member needs. There's no
+stored "amount paid" column: `event_payments` holds one row per installment, and what someone has
+paid is always `SUM(amount)` over their rows, so the total and the history can never disagree.
+
+A moderator changes what a member has paid in whichever way fits:
+
+- **Add a payment** — one more installment on top of what's there (`POST /events/:id/payments`).
+- **Edit or delete an installment** — fixes a figure typed wrong, leaving the rest of the ledger
+  alone (`PATCH`/`DELETE /events/:id/payments/:paymentId`).
+- **Set the total** — "just make it say 250", recorded as a single balancing entry rather than a
+  rewrite, so what was actually collected and when survives
+  (`PUT /events/:id/payments/member/:userId`).
+
+Negative amounts are allowed on purpose: that's how a refund is recorded without deleting history.
+Members only ever see their own money — `GET /events` and `/events/:id/payments/me` are scoped to
+the caller, and the full sheet is moderator-only.
 
 ## What's next (see docs/PLAN.md for the full roadmap)
 

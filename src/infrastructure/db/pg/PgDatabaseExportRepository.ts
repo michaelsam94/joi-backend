@@ -20,14 +20,16 @@ export class PgDatabaseExportRepository implements DatabaseExportRepository {
   constructor(private readonly db: Pool) {}
 
   async exportAllTables(): Promise<ExportTable[]> {
-    const [members, attendance, transactions, prizes, redemptions] = await Promise.all([
+    const [members, attendance, transactions, prizes, redemptions, events, eventPayments] = await Promise.all([
       this.exportMembers(),
       this.exportAttendance(),
       this.exportPointTransactions(),
       this.exportPrizes(),
       this.exportRedemptions(),
+      this.exportEvents(),
+      this.exportEventPayments(),
     ]);
-    return [members, attendance, transactions, prizes, redemptions];
+    return [members, attendance, transactions, prizes, redemptions, events, eventPayments];
   }
 
   private async exportMembers(): Promise<ExportTable> {
@@ -111,6 +113,58 @@ export class PgDatabaseExportRepository implements DatabaseExportRepository {
         r.quantity ?? '',
         r.active,
         formatTimestamp(r.created_at),
+      ]),
+    };
+  }
+
+  private async exportEvents(): Promise<ExportTable> {
+    // The collected total is summed straight from the payment ledger, so the sheet always
+    // reconciles against the individual installments listed on the next tab.
+    const { rows } = await this.db.query(
+      `SELECT e.name, e.location, e.price, e.event_date, e.event_time, e.active,
+              COALESCE(SUM(ep.amount), 0) AS collected,
+              COUNT(DISTINCT ep.user_id) AS payer_count
+       FROM events e
+       LEFT JOIN event_payments ep ON ep.event_id = e.id
+       GROUP BY e.id
+       ORDER BY e.event_date DESC, e.name`,
+    );
+    return {
+      title: 'Events',
+      headers: ['Name', 'Location', 'Price', 'Date', 'Time', 'Active', 'Total collected', 'Members who paid'],
+      rows: rows.map((r) => [
+        r.name,
+        r.location ?? '',
+        r.price,
+        formatDate(r.event_date),
+        r.event_time ?? '',
+        r.active,
+        r.collected,
+        r.payer_count,
+      ]),
+    };
+  }
+
+  private async exportEventPayments(): Promise<ExportTable> {
+    const { rows } = await this.db.query(
+      `SELECT ep.created_at, e.name AS event_name, m.full_name AS member_name, ep.amount, ep.note,
+              rb.full_name AS recorded_by_name
+       FROM event_payments ep
+       JOIN events e ON e.id = ep.event_id
+       JOIN users m ON m.id = ep.user_id
+       JOIN users rb ON rb.id = ep.recorded_by_id
+       ORDER BY ep.created_at DESC`,
+    );
+    return {
+      title: 'Event Payments',
+      headers: ['Date', 'Event', 'Member', 'Amount', 'Note', 'Recorded by'],
+      rows: rows.map((r) => [
+        formatTimestamp(r.created_at),
+        r.event_name,
+        r.member_name,
+        r.amount,
+        r.note ?? '',
+        r.recorded_by_name,
       ]),
     };
   }

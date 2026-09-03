@@ -9,6 +9,15 @@ import { AttendanceRepository } from '../../src/application/ports/AttendanceRepo
 import { Attendance } from '../../src/domain/entities/Attendance';
 import { PrizeRepository, CreatePrizeData, UpdatePrizeData } from '../../src/application/ports/PrizeRepository';
 import { Prize, PrizeRedemption } from '../../src/domain/entities/Prize';
+import {
+  EventRepository,
+  CreateEventData,
+  UpdateEventData,
+  CreateEventPaymentData,
+  UpdateEventPaymentData,
+  EventListFilter,
+} from '../../src/application/ports/EventRepository';
+import { Event, EventPayment } from '../../src/domain/entities/Event';
 import { Clock } from '../../src/application/ports/Clock';
 import { DatabaseExportRepository, ExportTable } from '../../src/application/ports/DatabaseExportRepository';
 import { DocumentExporter, QrSheetEntry } from '../../src/application/ports/DocumentExporter';
@@ -204,5 +213,93 @@ export class FakeDocumentExporter implements DocumentExporter {
   async exportDatabaseSheet(tabs: ExportTable[]): Promise<{ url: string }> {
     this.lastDatabaseTabs = tabs;
     return { url: 'https://docs.google.com/spreadsheets/d/fake-sheet/edit' };
+  }
+}
+
+export function makeEvent(overrides: Partial<Event> = {}): Event {
+  return {
+    id: nextId(),
+    name: 'Summer Trip',
+    description: null,
+    location: 'Alexandria',
+    price: 500,
+    eventDate: '2026-07-01',
+    eventTime: null,
+    imageUrl: null,
+    active: true,
+    ...overrides,
+  };
+}
+
+export class FakeEventRepository implements EventRepository {
+  events: Event[] = [];
+  payments: EventPayment[] = [];
+
+  async create(data: CreateEventData): Promise<Event> {
+    const event = makeEvent({
+      ...data,
+      description: data.description ?? null,
+      location: data.location ?? null,
+      eventTime: data.eventTime ?? null,
+      imageUrl: data.imageUrl ?? null,
+    });
+    this.events.push(event);
+    return event;
+  }
+  async findById(id: string): Promise<Event | null> {
+    return this.events.find((e) => e.id === id) ?? null;
+  }
+  async list(filter?: EventListFilter): Promise<Event[]> {
+    return this.events
+      .filter((e) => (filter?.activeOnly ? e.active : true))
+      .filter((e) => (filter?.from ? e.eventDate >= filter.from : true))
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+  }
+  async update(id: string, data: UpdateEventData): Promise<Event> {
+    const event = this.events.find((e) => e.id === id)!;
+    Object.assign(event, data);
+    return event;
+  }
+  async delete(id: string): Promise<void> {
+    this.events = this.events.filter((e) => e.id !== id);
+    this.payments = this.payments.filter((p) => p.eventId !== id);
+  }
+
+  async addPayment(data: CreateEventPaymentData): Promise<EventPayment> {
+    const payment: EventPayment = {
+      id: nextId(),
+      eventId: data.eventId,
+      userId: data.userId,
+      amount: data.amount,
+      note: data.note ?? null,
+      recordedById: data.recordedById,
+      createdAt: new Date(`2026-01-0${Math.min(9, this.payments.length + 1)}`),
+    };
+    this.payments.push(payment);
+    return payment;
+  }
+  async findPaymentById(id: string): Promise<EventPayment | null> {
+    return this.payments.find((p) => p.id === id) ?? null;
+  }
+  async updatePayment(id: string, data: UpdateEventPaymentData): Promise<EventPayment> {
+    const payment = this.payments.find((p) => p.id === id)!;
+    Object.assign(payment, data);
+    return payment;
+  }
+  async deletePayment(id: string): Promise<void> {
+    this.payments = this.payments.filter((p) => p.id !== id);
+  }
+  async listPaymentsForEvent(eventId: string): Promise<EventPayment[]> {
+    return this.payments.filter((p) => p.eventId === eventId);
+  }
+  async listPaymentsForUser(eventId: string, userId: string): Promise<EventPayment[]> {
+    return this.payments.filter((p) => p.eventId === eventId && p.userId === userId);
+  }
+  async totalsByEventForUser(userId: string): Promise<Record<string, number>> {
+    const totals: Record<string, number> = {};
+    for (const payment of this.payments.filter((p) => p.userId === userId)) {
+      totals[payment.eventId] = (totals[payment.eventId] ?? 0) + payment.amount;
+    }
+    return totals;
   }
 }

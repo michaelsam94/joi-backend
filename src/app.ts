@@ -7,6 +7,7 @@ import { attendanceRoutes } from './interfaces/http/routes/attendanceRoutes';
 import { pointsRoutes } from './interfaces/http/routes/pointsRoutes';
 import { leaderboardRoutes } from './interfaces/http/routes/leaderboardRoutes';
 import { prizeRoutes } from './interfaces/http/routes/prizeRoutes';
+import { eventRoutes } from './interfaces/http/routes/eventRoutes';
 import { telegramRoutes } from './interfaces/http/routes/telegramRoutes';
 import { exportRoutes } from './interfaces/http/routes/exportRoutes';
 import { uploadRoutes, uploadsDir } from './interfaces/http/routes/uploadRoutes';
@@ -29,6 +30,7 @@ export function buildApp(container: Container): Express {
   app.use('/points', pointsRoutes(container));
   app.use('/leaderboard', leaderboardRoutes(container));
   app.use('/prizes', prizeRoutes(container));
+  app.use('/events', eventRoutes(container));
   app.use('/telegram', telegramRoutes(container));
   app.use('/export', exportRoutes(container));
   // Static image reads are intentionally public (no auth) — Coil/AsyncImage on mobile requests
