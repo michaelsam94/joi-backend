@@ -14,7 +14,10 @@ interface UserRow {
   telegram_chat_id: string | null;
   total_points: number;
   active: boolean;
-  date_of_birth: string | null;
+  // pg parses a plain DATE column through its own default type parser into a JS Date — this
+  // interface's `string` claim doesn't match what's actually on the row at runtime, which is why
+  // toDateString below exists. See PgEventRepository's identical note on event_date.
+  date_of_birth: Date | string | null;
   phone_number: string | null;
   address: string | null;
   class_name: string | null;
@@ -24,6 +27,14 @@ interface UserRow {
   created_at: Date;
   updated_at: Date;
 }
+
+/** A DATE column comes back as a JS Date regardless of server timezone — a DATE has no time
+ * component to begin with, so slicing the ISO string is exact, not an approximation. Without this,
+ * JSON.stringify-ing the raw Date turns "1995-03-20" into "1995-03-20T00:00:00.000Z" on the wire. */
+const toDateString = (value: Date | string | null): string | null => {
+  if (value == null) return null;
+  return typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10);
+};
 
 function toDomain(row: UserRow): User {
   return {
@@ -37,7 +48,7 @@ function toDomain(row: UserRow): User {
     telegramChatId: row.telegram_chat_id,
     totalPoints: row.total_points,
     active: row.active,
-    dateOfBirth: row.date_of_birth,
+    dateOfBirth: toDateString(row.date_of_birth),
     phoneNumber: row.phone_number,
     address: row.address,
     className: row.class_name,
