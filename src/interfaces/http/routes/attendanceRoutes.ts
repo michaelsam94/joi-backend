@@ -16,7 +16,7 @@ function parseMeetingDateQuery(q: unknown): Date {
 
 export function attendanceRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   // Scanner endpoint: moderator scans a member's QR code to check them in for this week's meeting.
   router.post(

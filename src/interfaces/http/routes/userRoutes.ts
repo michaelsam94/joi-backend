@@ -36,7 +36,7 @@ function toModeratorDetailedUser(user: User) {
 
 export function userRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   // Moderator: register a brand-new person (temp username/password + auto QR token).
   router.post(

@@ -14,7 +14,7 @@ import { idParam } from '../dto/params';
 
 export function eventRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   /**
    * Everyone signed in sees the upcoming events; each row carries the *caller's own* paid and

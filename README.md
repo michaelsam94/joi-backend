@@ -58,6 +58,8 @@ cutoff, and the rule that a member's own balance never leaks anyone else's).
 
 All endpoints except `/health` and `/auth/login` require `Authorization: Bearer <token>`.
 Endpoints marked 🔒 require the `MODERATOR` role; everything else just requires being logged in.
+Every authenticated request also re-checks the account behind the token is still active — see
+"Deactivation takes effect immediately" below.
 
 | Method & path | Notes |
 |---|---|
@@ -126,6 +128,24 @@ Until configured, that endpoint returns a clear `503 NOT_CONFIGURED` error inste
   (see `levelForPoints` in `src/domain/entities/User.ts` if you want to retune the thresholds).
 - Every point change — attendance, a moderator's manual add/remove, a prize redemption — is logged
   as a `PointTransaction` with a reason, so `GET /users/:id/points/history` is always a full audit trail.
+
+## Deactivation takes effect immediately
+
+A JWT is normally stateless: once issued, it stays valid until it expires (`JWT_EXPIRES_IN`, 12h
+by default) no matter what happens to the account afterward. That would mean a member a moderator
+just deactivated could keep using the app — fetching the leaderboard, redeeming prizes — for up to
+12 more hours on their existing token.
+
+`requireAuth` closes that gap: it looks the account up on *every* authenticated request (not just
+at login) and rejects a still-validly-signed token with `401 ACCOUNT_DEACTIVATED` the moment the
+account behind it is inactive. The very next request that person's app makes fails, and the
+Android client treats that specific error as "your session is gone" — it clears the local session
+and the person lands back on the login screen, same as tapping Sign Out. Nothing waits for the
+token to expire.
+
+This is a real DB lookup per request rather than something baked into the token, which is
+precisely the point: only a fresh read of the account's current state can catch that it changed
+after the token was signed.
 
 ## Protected accounts
 

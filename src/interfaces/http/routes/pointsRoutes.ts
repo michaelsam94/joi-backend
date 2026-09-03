@@ -8,7 +8,7 @@ import { toPublicUser } from '../../../domain/entities/User';
 
 export function pointsRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   router.post(
     '/adjust',

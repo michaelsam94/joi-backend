@@ -5,7 +5,7 @@ import { requireAuth, requireRole } from '../middleware/auth';
 
 export function telegramRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   // Manual trigger — lets a moderator test the exact message the Friday cron job will send.
   router.post(

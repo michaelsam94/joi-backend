@@ -19,7 +19,7 @@ export function authRoutes(container: Container): Router {
 
   router.post(
     '/change-password',
-    requireAuth(container.tokens),
+    requireAuth(container.tokens, container.userRepo),
     validateBody(changePasswordSchema),
     asyncHandler(async (req, res) => {
       await container.useCases.changePassword.execute({

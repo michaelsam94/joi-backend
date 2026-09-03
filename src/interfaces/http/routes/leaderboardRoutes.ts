@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth';
 
 export function leaderboardRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   router.get(
     '/',

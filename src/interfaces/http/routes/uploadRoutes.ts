@@ -49,7 +49,7 @@ export function uploadRoutes(container: Container): Router {
 
   router.post(
     '/image',
-    requireAuth(container.tokens),
+    requireAuth(container.tokens, container.userRepo),
     requireRole('MODERATOR'),
     (req, res, next) => {
       upload.single('image')(req, res, (err: unknown) => {

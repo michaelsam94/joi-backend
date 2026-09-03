@@ -5,7 +5,7 @@ import { requireAuth, requireRole } from '../middleware/auth';
 
 export function exportRoutes(container: Container): Router {
   const router = Router();
-  router.use(requireAuth(container.tokens));
+  router.use(requireAuth(container.tokens, container.userRepo));
 
   router.post(
     '/qr-sheet',
