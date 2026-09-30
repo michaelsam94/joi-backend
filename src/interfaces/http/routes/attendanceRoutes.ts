@@ -26,6 +26,7 @@ export function attendanceRoutes(container: Container): Router {
     asyncHandler(async (req, res) => {
       const result = await container.useCases.checkIn.execute({
         qrToken: req.body.qrToken,
+        userId: req.body.userId,
         meetingDate: req.body.meetingDate,
         checkedById: req.auth!.userId,
       });

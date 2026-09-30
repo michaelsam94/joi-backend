@@ -6,7 +6,11 @@ import { NotFoundError, ConflictError, ForbiddenError } from '../../domain/error
 import { currentMeetingDate } from '../../domain/entities/Attendance';
 
 export interface CheckInInput {
-  qrToken: string;
+  /** Exactly one of qrToken/userId is expected (enforced by checkInSchema) — qrToken for the
+   * scanner/manual-token flow, userId for checking someone in by name when they have no phone to
+   * show a QR code at all. */
+  qrToken?: string;
+  userId?: string;
   checkedById: string;
   /** Optional explicit meeting date (YYYY-MM-DD). Defaults to "this week's meeting date" derived from now(). */
   meetingDate?: string;
@@ -37,8 +41,14 @@ export class CheckInUseCase {
   ) {}
 
   async execute(input: CheckInInput): Promise<CheckInOutput> {
-    const member = await this.users.findByQrToken(input.qrToken);
-    if (!member) throw new NotFoundError('No person matches this QR code');
+    const member = input.qrToken
+      ? await this.users.findByQrToken(input.qrToken)
+      : input.userId
+        ? await this.users.findById(input.userId)
+        : null;
+    if (!member) {
+      throw new NotFoundError(input.qrToken ? 'No person matches this QR code' : 'Member not found');
+    }
     if (!member.active) throw new ForbiddenError('This person is deactivated');
 
     const checker = await this.users.findById(input.checkedById);

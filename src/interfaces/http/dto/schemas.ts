@@ -40,13 +40,20 @@ export const updateUserSchema = z.object({
   temporaryPassword: z.string().min(6).optional(),
 });
 
-export const checkInSchema = z.object({
-  qrToken: z.string().min(1),
-  meetingDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-});
+export const checkInSchema = z
+  .object({
+    qrToken: z.string().min(1).optional(),
+    /** Alternative to qrToken — checks a member in by id directly, for the "member has no phone
+     * to show a QR code" case, where a moderator picks them from a name search instead. */
+    userId: z.string().min(1).optional(),
+    meetingDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+  })
+  .refine((data) => Boolean(data.qrToken) || Boolean(data.userId), {
+    message: 'Either qrToken or userId is required',
+  });
 
 export const assignRaffleNumberSchema = z.object({
   userId: z.string().min(1),
