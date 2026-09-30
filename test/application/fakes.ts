@@ -247,6 +247,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     eventTime: null,
     imageUrl: null,
     active: true,
+    minPoints: null,
     ...overrides,
   };
 }

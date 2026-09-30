@@ -114,6 +114,11 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
 
+-- Optional minimum total-points balance a member must have before a moderator can record a
+-- payment for them on this event. NULL (the default) means no minimum — every event created
+-- before this column existed keeps working exactly as before.
+ALTER TABLE events ADD COLUMN IF NOT EXISTS min_points INTEGER;
+
 -- One row per *installment*, not one per member: a member may settle the price in a single payment
 -- or across many, and the amount they've paid is always SUM(amount) over their rows. A moderator
 -- correcting a mistake edits a row, deletes one, or records a negative amount (a refund).

@@ -118,6 +118,8 @@ export const createEventSchema = z.object({
   eventDate: eventDateSchema,
   eventTime: eventTimeSchema,
   imageUrl: z.string().url().nullable().optional(),
+  /** Optional minimum points balance a member needs before a payment can be recorded for them. */
+  minPoints: z.number().int().nonnegative().nullable().optional(),
 });
 
 export const updateEventSchema = z.object({
@@ -129,6 +131,7 @@ export const updateEventSchema = z.object({
   eventTime: clearable(z.string().regex(/^\d{2}:\d{2}$/, 'eventTime must be HH:MM')),
   imageUrl: clearable(z.string().url()),
   active: z.boolean().optional(),
+  minPoints: clearable(z.number().int().nonnegative()),
 });
 
 /** One installment. Negative amounts are allowed on purpose — that's how a refund or a

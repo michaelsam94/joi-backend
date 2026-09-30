@@ -20,6 +20,7 @@ interface EventRow {
   event_time: string | null;
   image_url: string | null;
   active: boolean;
+  min_points: number | null;
 }
 
 interface EventPaymentRow {
@@ -47,6 +48,7 @@ const toEvent = (row: EventRow): Event => ({
   eventTime: row.event_time,
   imageUrl: row.image_url,
   active: row.active,
+  minPoints: row.min_points,
 });
 
 const toPayment = (row: EventPaymentRow): EventPayment => ({
@@ -64,8 +66,8 @@ export class PgEventRepository implements EventRepository {
 
   async create(data: CreateEventData): Promise<Event> {
     const { rows } = await this.db.query<EventRow>(
-      `INSERT INTO events (name, description, location, price, event_date, event_time, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO events (name, description, location, price, event_date, event_time, image_url, min_points)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [
         data.name,
         data.description ?? null,
@@ -74,6 +76,7 @@ export class PgEventRepository implements EventRepository {
         data.eventDate,
         data.eventTime ?? null,
         data.imageUrl ?? null,
+        data.minPoints ?? null,
       ],
     );
     return toEvent(rows[0]);
@@ -118,6 +121,7 @@ export class PgEventRepository implements EventRepository {
     if (data.eventTime !== undefined) assign('event_time', data.eventTime);
     if (data.imageUrl !== undefined) assign('image_url', data.imageUrl);
     if (data.active !== undefined) assign('active', data.active);
+    if (data.minPoints !== undefined) assign('min_points', data.minPoints);
     sets.push('updated_at = now()');
 
     values.push(id);

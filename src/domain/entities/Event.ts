@@ -5,6 +5,9 @@ export interface Event {
   location: string | null;
   /** Price per person. 0 means free. */
   price: number;
+  /** Minimum total-points balance a member needs before a payment can be recorded for them on
+   * this event. Null means no minimum — the field is entirely optional. */
+  minPoints: number | null;
   /** YYYY-MM-DD. */
   eventDate: string;
   /** HH:MM start time, or null when it isn't fixed yet. */

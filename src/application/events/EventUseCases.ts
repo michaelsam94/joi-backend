@@ -12,11 +12,19 @@ import { Event, EventPayment, paymentStanding, roundMoney } from '../../domain/e
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-function assertEventFields(data: { name?: string; price?: number; eventDate?: string }): void {
+function assertEventFields(data: {
+  name?: string;
+  price?: number;
+  eventDate?: string;
+  minPoints?: number | null;
+}): void {
   if (data.name !== undefined && !data.name.trim()) throw new ValidationError('Event name is required');
   if (data.price !== undefined && data.price < 0) throw new ValidationError('Price cannot be negative');
   if (data.eventDate !== undefined && !DATE_PATTERN.test(data.eventDate)) {
     throw new ValidationError('Event date must be YYYY-MM-DD');
+  }
+  if (data.minPoints != null && data.minPoints < 0) {
+    throw new ValidationError('Minimum points cannot be negative');
   }
 }
 
@@ -205,6 +213,11 @@ export class RecordEventPaymentUseCase {
     if (!event) throw new NotFoundError('Event not found');
     const user = await this.users.findById(data.userId);
     if (!user) throw new NotFoundError('User not found');
+    if (event.minPoints != null && user.totalPoints < event.minPoints) {
+      throw new ValidationError(
+        `${user.fullName} doesn't have enough points for this event — needs at least ${event.minPoints}, has ${user.totalPoints}`,
+      );
+    }
     if (data.amount === 0) throw new ValidationError('Payment amount cannot be 0');
     return this.events.addPayment({ ...data, amount: roundMoney(data.amount) });
   }
@@ -258,6 +271,11 @@ export class SetMemberEventTotalUseCase {
     if (!event) throw new NotFoundError('Event not found');
     const user = await this.users.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
+    if (event.minPoints != null && user.totalPoints < event.minPoints) {
+      throw new ValidationError(
+        `${user.fullName} doesn't have enough points for this event — needs at least ${event.minPoints}, has ${user.totalPoints}`,
+      );
+    }
     if (input.total < 0) throw new ValidationError('Total paid cannot be negative');
 
     const payments = await this.events.listPaymentsForUser(input.eventId, input.userId);

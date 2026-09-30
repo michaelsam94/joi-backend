@@ -10,6 +10,9 @@ export interface CreateEventData {
   /** HH:MM. */
   eventTime?: string | null;
   imageUrl?: string | null;
+  /** Optional minimum points balance required before a payment can be recorded. Omitted/undefined
+   * and null both mean "no minimum". */
+  minPoints?: number | null;
 }
 
 export interface UpdateEventData {
@@ -21,6 +24,7 @@ export interface UpdateEventData {
   eventTime?: string | null;
   imageUrl?: string | null;
   active?: boolean;
+  minPoints?: number | null;
 }
 
 export interface CreateEventPaymentData {
