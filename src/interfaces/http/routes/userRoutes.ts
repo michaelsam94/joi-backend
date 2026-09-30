@@ -26,12 +26,16 @@ function toDetailedUser(user: User) {
   };
 }
 
-/** Adds the moderator-only private note, and whether the account is protected, on top of the
- * detailed view — never included in /users/me, so a member never sees notes kept about them.
- * `isProtected` lets the app grey out edit/deactivate/reset-password controls for this account
- * instead of only discovering it's blocked after a failed request. */
+/** Adds the moderator-only private note, whether the account is protected, and the raw QR token
+ * on top of the detailed view — never included in /users/me, so a member never sees notes kept
+ * about them or gets a copy of their own token this way. `isProtected` lets the app grey out
+ * edit/deactivate/reset-password controls for this account instead of only discovering it's
+ * blocked after a failed request. Exposing `qrToken` here is no more sensitive than the existing
+ * GET /:id/qr endpoint already is for a moderator (that PNG just re-encodes the same token) — it
+ * lets the app check a member in by name, for one without a phone to show a QR code, by reusing
+ * the same /attendance/check-in flow instead of a separate code path. */
 function toModeratorDetailedUser(user: User) {
-  return { ...toDetailedUser(user), note: user.note, isProtected: user.isProtected };
+  return { ...toDetailedUser(user), note: user.note, isProtected: user.isProtected, qrToken: user.qrToken };
 }
 
 export function userRoutes(container: Container): Router {
