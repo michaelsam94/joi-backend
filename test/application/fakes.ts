@@ -205,6 +205,9 @@ export class FakePrizeRepository implements PrizeRepository {
   async listRedeemedPrizeIdsByUser(userId: string): Promise<string[]> {
     return Array.from(new Set(this.redemptions.filter((r) => r.userId === userId).map((r) => r.prizeId)));
   }
+  async hasRedemptions(prizeId: string): Promise<boolean> {
+    return this.redemptions.some((r) => r.prizeId === prizeId);
+  }
 }
 
 export class FixedClock implements Clock {

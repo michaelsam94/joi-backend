@@ -24,6 +24,10 @@ export interface PrizeRepository {
   list(filter?: { activeOnly?: boolean }): Promise<Prize[]>;
   update(id: string, data: UpdatePrizeData): Promise<Prize>;
   delete(id: string): Promise<void>;
+  /** True if anyone has ever redeemed this prize. A prize with redemption history can't be hard
+   * deleted (prize_redemptions.prize_id has no ON DELETE CASCADE, so it would violate the FK and
+   * throw) — DeletePrizeUseCase checks this to decide whether to deactivate instead. */
+  hasRedemptions(prizeId: string): Promise<boolean>;
   createRedemption(prizeId: string, userId: string, pointsSpent: number, redeemedById: string): Promise<PrizeRedemption>;
   /** Atomically decrements a limited-quantity prize's stock by one, but only if it currently has
    * stock — returns false (no-op) if it's already at 0. A prize with unlimited (null) quantity

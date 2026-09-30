@@ -32,6 +32,14 @@ export class DeletePrizeUseCase {
   async execute(id: string): Promise<void> {
     const existing = await this.prizes.findById(id);
     if (!existing) throw new NotFoundError('Prize not found');
+    // prize_redemptions.prize_id has no ON DELETE CASCADE, so hard-deleting a prize that anyone
+    // has ever redeemed would violate the FK and throw an unhandled 500 — this used to be exactly
+    // what happened whenever a moderator tried to delete a redeemed prize. Deactivate it instead
+    // so redemption history stays intact; a never-redeemed prize is still removed outright.
+    if (await this.prizes.hasRedemptions(id)) {
+      await this.prizes.update(id, { active: false });
+      return;
+    }
     await this.prizes.delete(id);
   }
 }
