@@ -13,10 +13,11 @@ describe('DeletePrizeUseCase', () => {
     expect(await prizes.findById(prize.id)).toBeNull();
   });
 
-  it('deactivates instead of hard-deleting a prize with redemption history', async () => {
-    // prize_redemptions.prize_id has no ON DELETE CASCADE, so a hard delete here would violate
-    // the FK — this is the exact bug that made "delete prize" appear to silently do nothing for
-    // any prize that had ever been redeemed.
+  it('hard-deletes a prize with redemption history, clearing its redemptions too', async () => {
+    // prize_redemptions.prize_id has no ON DELETE CASCADE, so a plain DELETE FROM prizes used to
+    // throw an unhandled FK violation for any prize that had ever been redeemed. The repository
+    // now clears the prize's redemptions first (same transaction) so the delete actually removes
+    // the prize completely, as a moderator deleting a prize expects.
     const prizes = new FakePrizeRepository();
     const prize = await prizes.create({ name: 'T-Shirt', pointsCost: 20 });
     await prizes.createRedemption(prize.id, 'user-1', 20, 'moderator-1');
@@ -24,9 +25,8 @@ describe('DeletePrizeUseCase', () => {
     const useCase = new DeletePrizeUseCase(prizes);
     await useCase.execute(prize.id);
 
-    const stillThere = await prizes.findById(prize.id);
-    expect(stillThere).not.toBeNull();
-    expect(stillThere!.active).toBe(false);
+    expect(await prizes.findById(prize.id)).toBeNull();
+    expect(await prizes.listRedeemedPrizeIdsByUser('user-1')).not.toContain(prize.id);
   });
 
   it('throws NotFoundError for an unknown prize id', async () => {

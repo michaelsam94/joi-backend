@@ -104,15 +104,21 @@ export class PgPrizeRepository implements PrizeRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.db.query('DELETE FROM prizes WHERE id = $1', [id]);
-  }
-
-  async hasRedemptions(prizeId: string): Promise<boolean> {
-    const { rows } = await this.db.query(
-      'SELECT 1 FROM prize_redemptions WHERE prize_id = $1 LIMIT 1',
-      [prizeId],
-    );
-    return rows.length > 0;
+    // prize_redemptions.prize_id has no ON DELETE CASCADE, so a prize that was ever redeemed
+    // can't be deleted on its own — clear its redemption history first, in the same transaction,
+    // so a moderator deleting a prize gets a real, complete delete rather than a silent FK error.
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM prize_redemptions WHERE prize_id = $1', [id]);
+      await client.query('DELETE FROM prizes WHERE id = $1', [id]);
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async createRedemption(

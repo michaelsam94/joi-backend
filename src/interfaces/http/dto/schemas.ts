@@ -36,8 +36,11 @@ export const updateUserSchema = z.object({
   address: z.string().nullable().optional(),
   className: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
-  /** Set by a moderator to reset a member's forgotten password — see UpdateUserUseCase. */
-  temporaryPassword: z.string().min(6).optional(),
+  /** Set by a moderator to reset a member's forgotten password — see UpdateUserUseCase. The
+   * mobile app's edit-member form always sends this key (even when left blank, as explicit
+   * null — see UpdateMemberProfileRequestDto), so this must accept null as well as omission;
+   * UpdateUserUseCase already treats both the same as "don't reset". */
+  temporaryPassword: z.string().min(6).nullable().optional(),
 });
 
 export const checkInSchema = z

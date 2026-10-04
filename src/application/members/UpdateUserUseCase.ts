@@ -5,8 +5,9 @@ import { User } from '../../domain/entities/User';
 
 export interface UpdateUserInput extends UpdateUserData {
   /** Moderator-set reset password — people forget theirs. Setting this hashes it and forces the
-   * member to change it on their next login, exactly like a brand-new registration. */
-  temporaryPassword?: string;
+   * member to change it on their next login, exactly like a brand-new registration. null/undefined
+   * both mean "leave the password alone" — see the `if (temporaryPassword)` check below. */
+  temporaryPassword?: string | null;
 }
 
 export class UpdateUserUseCase {

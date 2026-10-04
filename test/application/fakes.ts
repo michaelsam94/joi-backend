@@ -185,6 +185,7 @@ export class FakePrizeRepository implements PrizeRepository {
   }
   async delete(id: string): Promise<void> {
     this.prizes = this.prizes.filter((p) => p.id !== id);
+    this.redemptions = this.redemptions.filter((r) => r.prizeId !== id);
   }
   async createRedemption(
     prizeId: string,
@@ -204,9 +205,6 @@ export class FakePrizeRepository implements PrizeRepository {
   }
   async listRedeemedPrizeIdsByUser(userId: string): Promise<string[]> {
     return Array.from(new Set(this.redemptions.filter((r) => r.userId === userId).map((r) => r.prizeId)));
-  }
-  async hasRedemptions(prizeId: string): Promise<boolean> {
-    return this.redemptions.some((r) => r.prizeId === prizeId);
   }
 }
 
